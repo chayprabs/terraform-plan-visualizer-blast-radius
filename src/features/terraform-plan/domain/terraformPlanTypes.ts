@@ -51,6 +51,7 @@ export interface TerraformStateResource extends TerraformLooseObject {
   name?: string;
   index?: TerraformIndexValue | null;
   provider_name?: string;
+  depends_on?: string[] | null;
   values?: TerraformLooseObject | null;
   sensitive_values?: TerraformLooseObject | null;
 }
@@ -92,12 +93,14 @@ export interface TerraformConfigurationResource extends TerraformLooseObject {
   type?: string;
   name?: string;
   provider_config_key?: string;
+  depends_on?: string[] | null;
   expressions?: Record<string, unknown>;
 }
 
 export interface TerraformConfigurationModule extends TerraformLooseObject {
   address?: string;
   resources?: TerraformConfigurationResource[] | null;
+  child_modules?: TerraformConfigurationModule[] | null;
   module_calls?: Record<string, TerraformLooseObject> | null;
 }
 
