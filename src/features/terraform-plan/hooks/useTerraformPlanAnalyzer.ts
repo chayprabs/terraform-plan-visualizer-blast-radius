@@ -1,0 +1,217 @@
+"use client";
+
+import { useCallback, useEffect, useReducer, useRef } from "react";
+import {
+  riskyPlan,
+  tinyPlan,
+} from "@/features/terraform-plan/fixtures/samplePlans";
+import {
+  analysisStateReducer,
+  createInitialAnalysisState,
+} from "@/features/terraform-plan/state/analysisState";
+import {
+  ANALYSIS_NORMALIZING_PROGRESS_MESSAGE,
+  analyzeTerraformPlanText,
+  createInputTooLargeError,
+  createWorkerUnavailableWarning,
+  DEFAULT_MAX_TERRAFORM_PLAN_INPUT_BYTES,
+  getTextSizeBytes,
+  type TerraformPlanWorkerOutputMessage,
+} from "@/features/terraform-plan/worker/workerMessages";
+
+const samplePlanMap = {
+  riskyPlan,
+  tinyPlan,
+} as const;
+
+export type TerraformPlanSampleKey = keyof typeof samplePlanMap;
+
+function createTerraformPlanWorker(): Worker {
+  return new Worker(
+    new URL("../worker/terraformPlanWorker.ts", import.meta.url),
+    { type: "module" },
+  );
+}
+
+export function useTerraformPlanAnalyzer() {
+  const [state, dispatch] = useReducer(
+    analysisStateReducer,
+    undefined,
+    createInitialAnalysisState,
+  );
+  const workerRef = useRef<Worker | null>(null);
+
+  const terminateWorker = useCallback(() => {
+    workerRef.current?.terminate();
+    workerRef.current = null;
+  }, []);
+
+  const reset = useCallback(() => {
+    terminateWorker();
+    dispatch({ type: "RESET" });
+  }, [terminateWorker]);
+
+  useEffect(() => terminateWorker, [terminateWorker]);
+
+  const runFallbackAnalysis = useCallback(
+    async (text: string, sourceName?: string) => {
+      const fallbackWarning = createWorkerUnavailableWarning();
+
+      dispatch({
+        type: "SET_PROGRESS",
+        status: "parsing",
+        message: fallbackWarning.message,
+      });
+
+      await Promise.resolve();
+
+      const result = analyzeTerraformPlanText(text, {
+        sourceName,
+        extraWarnings: [fallbackWarning],
+      });
+
+      if (result.ok) {
+        dispatch({
+          type: "SET_SUCCESS",
+          normalizedPlan: result.normalizedPlan,
+          warnings: result.warnings,
+        });
+        return;
+      }
+
+      dispatch({
+        type: "SET_ERROR",
+        error: result.error,
+        warnings: [fallbackWarning],
+      });
+    },
+    [],
+  );
+
+  const analyzeText = useCallback(
+    (text: string, sourceName?: string) => {
+      dispatch({
+        type: "REQUEST_ANALYSIS",
+        inputText: text,
+        sourceName,
+      });
+
+      const inputSizeBytes = getTextSizeBytes(text);
+
+      if (inputSizeBytes > DEFAULT_MAX_TERRAFORM_PLAN_INPUT_BYTES) {
+        dispatch({
+          type: "SET_ERROR",
+          error: createInputTooLargeError(
+            inputSizeBytes,
+            DEFAULT_MAX_TERRAFORM_PLAN_INPUT_BYTES,
+            sourceName,
+          ),
+        });
+        return;
+      }
+
+      if (typeof Worker === "undefined") {
+        void runFallbackAnalysis(text, sourceName);
+        return;
+      }
+
+      terminateWorker();
+
+      let worker: Worker;
+
+      try {
+        worker = createTerraformPlanWorker();
+      } catch {
+        void runFallbackAnalysis(text, sourceName);
+        return;
+      }
+
+      workerRef.current = worker;
+
+      worker.onmessage = (
+        event: MessageEvent<TerraformPlanWorkerOutputMessage>,
+      ) => {
+        const message = event.data;
+
+        switch (message.type) {
+          case "ANALYSIS_STARTED":
+            dispatch({
+              type: "SET_PROGRESS",
+              status: "parsing",
+              message: "Analysis started.",
+            });
+            break;
+          case "ANALYSIS_PROGRESS":
+            dispatch({
+              type: "SET_PROGRESS",
+              status:
+                message.message === ANALYSIS_NORMALIZING_PROGRESS_MESSAGE
+                  ? "analyzing"
+                  : "parsing",
+              message: message.message,
+            });
+            break;
+          case "ANALYSIS_SUCCESS":
+            dispatch({
+              type: "SET_SUCCESS",
+              normalizedPlan: message.normalizedPlan,
+              warnings: message.warnings,
+            });
+            terminateWorker();
+            break;
+          case "ANALYSIS_ERROR":
+            dispatch({
+              type: "SET_ERROR",
+              error: message.error,
+            });
+            terminateWorker();
+            break;
+          default:
+            break;
+        }
+      };
+
+      worker.onerror = () => {
+        dispatch({
+          type: "SET_ERROR",
+          error: {
+            code: "worker-runtime-error",
+            message: "The analysis worker failed before it could finish.",
+            sourceName,
+          },
+        });
+        terminateWorker();
+      };
+
+      worker.postMessage({
+        type: "ANALYZE_TEXT",
+        text,
+        sourceName,
+      });
+    },
+    [runFallbackAnalysis, terminateWorker],
+  );
+
+  const loadSample = useCallback(
+    (sampleKey: TerraformPlanSampleKey) => {
+      const sample = samplePlanMap[sampleKey];
+      const sourceName = `${sampleKey}.json`;
+
+      analyzeText(JSON.stringify(sample, null, 2), sourceName);
+    },
+    [analyzeText],
+  );
+
+  return {
+    status: state.status,
+    inputText: state.inputText,
+    normalizedPlan: state.normalizedPlan,
+    warnings: state.warnings,
+    error: state.error,
+    sourceName: state.sourceName,
+    progressMessage: state.progressMessage,
+    analyzeText,
+    reset,
+    loadSample,
+  };
+}

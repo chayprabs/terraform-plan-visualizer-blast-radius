@@ -1,26 +1,111 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+  --background: #f3f5f8;
+  --surface: #ffffff;
+  --surface-muted: #eef2f7;
+  --surface-strong: #e4ebf5;
+  --foreground: #0f172a;
+  --muted-foreground: #5b6476;
+  --border: #d7dee8;
+  --brand: #1554d1;
+  --brand-foreground: #ffffff;
+  --ring: #8eb0ff;
+  --positive: #1f7a45;
+  --positive-soft: #e6f4eb;
+  --warning: #a05a00;
+  --warning-soft: #fff1dc;
+  --critical: #b33a2d;
+  --critical-soft: #fce7e3;
+  --shadow-color: rgba(15, 23, 42, 0.08);
+  --page-glow: rgba(21, 84, 209, 0.1);
+  --page-overlay: rgba(255, 255, 255, 0.9);
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-strong: var(--surface-strong);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-ring: var(--ring);
+  --color-positive: var(--positive);
+  --color-positive-soft: var(--positive-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-critical: var(--critical);
+  --color-critical-soft: var(--critical-soft);
+  --font-sans: var(--font-ibm-plex-sans);
+  --font-mono: var(--font-ibm-plex-mono);
+  --radius-sm: 0.75rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.5rem;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    color-scheme: dark;
+    --background: #09101e;
+    --surface: #101827;
+    --surface-muted: #162033;
+    --surface-strong: #1c2840;
+    --foreground: #edf2ff;
+    --muted-foreground: #a7b1c6;
+    --border: #263550;
+    --brand: #8cb3ff;
+    --brand-foreground: #081120;
+    --ring: #bfd4ff;
+    --positive: #78d29a;
+    --positive-soft: #12291d;
+    --warning: #ffcb78;
+    --warning-soft: #30230f;
+    --critical: #ff9b8f;
+    --critical-soft: #351613;
+    --shadow-color: rgba(1, 8, 20, 0.35);
+    --page-glow: rgba(140, 179, 255, 0.18);
+    --page-overlay: rgba(6, 11, 22, 0.84);
   }
 }
 
+* {
+  box-sizing: border-box;
+  border-color: var(--border);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
 body {
+  margin: 0;
+  min-height: 100vh;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-image:
+    radial-gradient(circle at top, var(--page-glow), transparent 32%),
+    linear-gradient(180deg, var(--page-overlay), var(--background));
+}
+
+main {
+  isolation: isolate;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: var(--brand);
+  color: var(--brand-foreground);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
 }
