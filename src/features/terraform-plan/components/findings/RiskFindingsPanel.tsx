@@ -1,7 +1,10 @@
 "use client";
 
 import { useDeferredValue, useEffect, useState } from "react";
+import { ExportTrustNote } from "@/features/terraform-plan/components/privacy/ExportTrustNote";
+import { usePrivacyRedaction } from "@/features/terraform-plan/components/privacy/PrivacyRedactionContext";
 import type { NormalizedPlan } from "@/features/terraform-plan/domain/normalizedPlanTypes";
+import { redactText } from "@/features/terraform-plan/privacy/redactTerraformPlan";
 import { getHighestSeverity } from "@/features/terraform-plan/risk/evaluateRisk";
 import {
   compareRiskSeverity,
@@ -153,9 +156,12 @@ async function copyText(value: string): Promise<boolean> {
   }
 }
 
-function formatHighRiskCopy(findings: RiskFinding[]): string {
+function formatHighRiskCopy(
+  findings: RiskFinding[],
+  settings: Parameters<typeof getSafeFindingEvidence>[1],
+): string {
   const sections = findings.map((finding) =>
-    formatFindingCopy(finding, getSafeFindingEvidence(finding)),
+    formatFindingCopy(finding, getSafeFindingEvidence(finding, settings)),
   );
 
   return [
@@ -206,6 +212,7 @@ export function RiskFindingsPanel({
   normalizedPlan,
   onOpenResource,
 }: RiskFindingsPanelProps) {
+  const { settings } = usePrivacyRedaction();
   const [severity, setSeverity] = useState<RiskSeverity | "all">("all");
   const [category, setCategory] = useState<RiskCategory | "all">("all");
   const [actionKind, setActionKind] = useState<RiskActionKind | "all">("all");
@@ -342,7 +349,13 @@ export function RiskFindingsPanel({
 
   const handleCopyFinding = async (finding: RiskFinding) => {
     const copied = await copyText(
-      formatFindingCopy(finding, getSafeFindingEvidence(finding)),
+      redactText(
+        formatFindingCopy(finding, getSafeFindingEvidence(finding, settings)),
+        {
+          scope: "export",
+          settings,
+        },
+      ),
     );
 
     if (copied) {
@@ -356,7 +369,12 @@ export function RiskFindingsPanel({
   };
 
   const handleCopyHighRiskFindings = async () => {
-    const copied = await copyText(formatHighRiskCopy(highRiskFindings));
+    const copied = await copyText(
+      redactText(formatHighRiskCopy(highRiskFindings, settings), {
+        scope: "export",
+        settings,
+      }),
+    );
     setBulkCopyState(copied ? "copied" : "error");
   };
 
@@ -409,6 +427,8 @@ export function RiskFindingsPanel({
             Score {report.score}/100
           </div>
         </div>
+
+        <ExportTrustNote />
       </div>
 
       <FindingFilters
@@ -471,7 +491,7 @@ export function RiskFindingsPanel({
                           ? "error"
                           : "idle"
                     }
-                    evidence={getSafeFindingEvidence(finding)}
+                    evidence={getSafeFindingEvidence(finding, settings)}
                     finding={finding}
                     onCopy={() => {
                       void handleCopyFinding(finding);

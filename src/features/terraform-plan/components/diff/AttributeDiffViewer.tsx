@@ -4,10 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import type { NormalizedResourceChange } from "@/features/terraform-plan/domain/normalizedPlanTypes";
 import { buildAttributeDiff } from "@/features/terraform-plan/diff/buildAttributeDiff";
 import { formatDiffValue } from "@/features/terraform-plan/diff/formatDiffValue";
+import { ExportTrustNote } from "@/features/terraform-plan/components/privacy/ExportTrustNote";
+import { usePrivacyRedaction } from "@/features/terraform-plan/components/privacy/PrivacyRedactionContext";
 import type {
   AttributeDiffRow,
 } from "@/features/terraform-plan/diff/attributeDiffTypes";
 import { DiffPathRow } from "@/features/terraform-plan/components/diff/DiffPathRow";
+import { redactText } from "@/features/terraform-plan/privacy/redactTerraformPlan";
 import { cn } from "@/lib/utils";
 
 type DiffFilterMode = "all" | "changed" | "sensitive" | "unknown";
@@ -92,6 +95,7 @@ function getChangedPaths(rows: AttributeDiffRow[]): string[] {
 export function AttributeDiffViewer({
   resourceChange,
 }: AttributeDiffViewerProps) {
+  const { settings } = usePrivacyRedaction();
   const [filterMode, setFilterMode] = useState<DiffFilterMode>("all");
   const [showUnchangedRows, setShowUnchangedRows] = useState(false);
   const [copyState, setCopyState] = useState<CopyState>({
@@ -150,7 +154,12 @@ export function AttributeDiffViewer({
   }, [copyState]);
 
   const handleCopyDiff = async () => {
-    const copied = await copyText(formatDiffMarkdown(visibleRows));
+    const copied = await copyText(
+      redactText(formatDiffMarkdown(visibleRows), {
+        scope: "export",
+        settings,
+      }),
+    );
 
     setCopyState((current) => ({
       ...current,
@@ -159,7 +168,12 @@ export function AttributeDiffViewer({
   };
 
   const handleCopyChangedPaths = async () => {
-    const copied = await copyText(visibleChangedPaths.join("\n"));
+    const copied = await copyText(
+      redactText(visibleChangedPaths.join("\n"), {
+        scope: "export",
+        settings,
+      }),
+    );
 
     setCopyState((current) => ({
       ...current,
@@ -182,6 +196,7 @@ export function AttributeDiffViewer({
               {diff.changedPaths.length} changed paths, {diff.counts.sensitive} sensitive rows,{" "}
               {diff.counts.unknown} unknown rows.
             </p>
+            <ExportTrustNote />
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">

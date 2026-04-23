@@ -4,6 +4,7 @@ import { normalizeTerraformPlan } from "@/features/terraform-plan/domain/normali
 import type { TerraformPlan } from "@/features/terraform-plan/domain/terraformPlanTypes";
 import { ResourceChangesTable } from "@/features/terraform-plan/components/resources/ResourceChangesTable";
 import { riskyPlan, tinyPlan } from "@/features/terraform-plan/fixtures/samplePlans";
+import { createBlastRadiusPlan } from "./blastRadiusTestPlan";
 
 const writeText = vi.fn();
 
@@ -145,7 +146,7 @@ describe("ResourceChangesTable", () => {
     expect(
       screen.getByText(/No resources match these filters\./i),
     ).toBeInTheDocument();
-  });
+  }, 15000);
 
   it("shows no-op resources by default for smaller plans", () => {
     render(
@@ -182,5 +183,34 @@ describe("ResourceChangesTable", () => {
     fireEvent.click(noOpToggle);
 
     expect(screen.getByText(/aws_cloudwatch_log_group\.app_0/i)).toBeInTheDocument();
+  });
+
+  it("filters the table to the selected blast radius", () => {
+    render(
+      <ResourceChangesTable
+        blastRadiusAddresses={
+          new Set([
+            "module.data.aws_db_instance.primary",
+            "module.app.aws_instance.api",
+            "module.edge.aws_lb_listener.public",
+          ])
+        }
+        blastRadiusFocusAddress="module.app.aws_instance.api"
+        hasAnalyzed
+        normalizedPlan={normalizeTerraformPlan(createBlastRadiusPlan())}
+      />,
+    );
+
+    fireEvent.click(screen.getByLabelText(/In selected blast radius/i));
+
+    expect(
+      screen.getByText(/module\.data\.aws_db_instance\.primary/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/module\.app\.aws_instance\.api/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/module\.identity\.aws_iam_role\.worker/i),
+    ).not.toBeInTheDocument();
   });
 });

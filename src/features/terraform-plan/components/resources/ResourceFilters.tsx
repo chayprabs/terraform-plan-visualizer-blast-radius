@@ -8,10 +8,14 @@ type ResourceSeverityFilter = RiskSeverity | "none" | "all";
 interface ResourceFiltersProps {
   action: ChangeActionKind | "all";
   actionOptions: ResourceFilterOption[];
+  blastRadiusCount?: number;
+  blastRadiusFocusAddress?: string | null;
   includeNoOp: boolean;
+  inSelectedBlastRadiusOnly?: boolean;
   module: string | "all";
   moduleOptions: ResourceFilterOption[];
   onActionChange: (value: ChangeActionKind | "all") => void;
+  onInSelectedBlastRadiusOnlyChange?: (value: boolean) => void;
   onIncludeNoOpChange: (value: boolean) => void;
   onModuleChange: (value: string | "all") => void;
   onProviderChange: (value: string | "all") => void;
@@ -63,10 +67,14 @@ function FilterSelect({
 export function ResourceFilters({
   action,
   actionOptions,
+  blastRadiusCount = 0,
+  blastRadiusFocusAddress = null,
   includeNoOp,
+  inSelectedBlastRadiusOnly = false,
   module,
   moduleOptions,
   onActionChange,
+  onInSelectedBlastRadiusOnlyChange,
   onIncludeNoOpChange,
   onModuleChange,
   onProviderChange,
@@ -145,6 +153,24 @@ export function ResourceFilters({
           onChange={(event) => onIncludeNoOpChange(event.target.checked)}
         />
         Include no-op resources
+      </label>
+
+      <label className="text-foreground mt-3 inline-flex items-center gap-3 text-sm font-medium">
+        <input
+          type="checkbox"
+          className="border-border h-4 w-4 rounded"
+          checked={inSelectedBlastRadiusOnly}
+          disabled={!blastRadiusFocusAddress || !onInSelectedBlastRadiusOnlyChange}
+          onChange={(event) =>
+            onInSelectedBlastRadiusOnlyChange?.(event.target.checked)
+          }
+        />
+        <span>
+          In selected blast radius
+          {blastRadiusFocusAddress
+            ? ` (${blastRadiusCount})`
+            : " (select a focus resource first)"}
+        </span>
       </label>
     </section>
   );

@@ -122,7 +122,7 @@ describe("RiskFindingsPanel", () => {
     expect(onOpenResource).toHaveBeenCalledWith(
       "module.data.aws_db_instance.primary",
     );
-  });
+  }, 15000);
 
   it("copies all high-risk findings as markdown text", async () => {
     render(

@@ -1,8 +1,12 @@
+"use client";
+
 import { formatDiffValue } from "@/features/terraform-plan/diff/formatDiffValue";
+import { usePrivacyRedaction } from "@/features/terraform-plan/components/privacy/PrivacyRedactionContext";
 import type {
   AttributeDiffKind,
   AttributeDiffRow,
 } from "@/features/terraform-plan/diff/attributeDiffTypes";
+import { redactText } from "@/features/terraform-plan/privacy/redactTerraformPlan";
 import { cn } from "@/lib/utils";
 
 interface DiffPathRowProps {
@@ -43,6 +47,22 @@ function getAfterValueLabel(row: AttributeDiffRow): string {
 }
 
 export function DiffPathRow({ row }: DiffPathRowProps) {
+  const { settings } = usePrivacyRedaction();
+  const beforeValueLabel = redactText(getBeforeValueLabel(row), {
+    scope: "display",
+    settings,
+  });
+  const afterValueLabel = redactText(getAfterValueLabel(row), {
+    scope: "display",
+    settings,
+  });
+  const noteLabel = row.note
+    ? redactText(row.note, {
+        scope: "display",
+        settings,
+      })
+    : null;
+
   return (
     <article
       className={cn(
@@ -57,9 +77,9 @@ export function DiffPathRow({ row }: DiffPathRowProps) {
           <p className="text-foreground break-all text-sm font-medium">
             {row.path}
           </p>
-          {row.note ? (
+          {noteLabel ? (
             <p className="text-muted-foreground mt-1 text-sm leading-6">
-              {row.note}
+              {noteLabel}
             </p>
           ) : null}
         </div>
@@ -81,7 +101,7 @@ export function DiffPathRow({ row }: DiffPathRowProps) {
               Before
             </p>
             <p className="text-foreground mt-2 break-words text-sm leading-6">
-              {getBeforeValueLabel(row)}
+              {beforeValueLabel}
             </p>
           </div>
 
@@ -90,7 +110,7 @@ export function DiffPathRow({ row }: DiffPathRowProps) {
               After
             </p>
             <p className="text-foreground mt-2 break-words text-sm leading-6">
-              {getAfterValueLabel(row)}
+              {afterValueLabel}
             </p>
           </div>
         </div>

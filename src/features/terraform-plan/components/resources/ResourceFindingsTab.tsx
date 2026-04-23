@@ -4,10 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import type { NormalizedResourceChange } from "@/features/terraform-plan/domain/normalizedPlanTypes";
 import { EmptyFindingsState } from "@/features/terraform-plan/components/findings/EmptyFindingsState";
 import { FindingCard } from "@/features/terraform-plan/components/findings/FindingCard";
+import { ExportTrustNote } from "@/features/terraform-plan/components/privacy/ExportTrustNote";
+import { usePrivacyRedaction } from "@/features/terraform-plan/components/privacy/PrivacyRedactionContext";
 import {
   formatFindingCopy,
   getSafeFindingEvidence,
 } from "@/features/terraform-plan/components/findings/findingPresentation";
+import { redactText } from "@/features/terraform-plan/privacy/redactTerraformPlan";
 import { compareRiskSeverity } from "@/features/terraform-plan/risk/riskCopy";
 import type { RiskFinding } from "@/features/terraform-plan/risk/riskTypes";
 
@@ -50,6 +53,7 @@ function compareFindings(left: RiskFinding, right: RiskFinding): number {
 export function ResourceFindingsTab({
   resourceChange,
 }: ResourceFindingsTabProps) {
+  const { settings } = usePrivacyRedaction();
   const [copiedFindingId, setCopiedFindingId] = useState<string | null>(null);
   const [failedFindingId, setFailedFindingId] = useState<string | null>(null);
   const findings = useMemo(
@@ -81,7 +85,13 @@ export function ResourceFindingsTab({
 
   const handleCopyFinding = async (finding: RiskFinding) => {
     const copied = await copyText(
-      formatFindingCopy(finding, getSafeFindingEvidence(finding)),
+      redactText(
+        formatFindingCopy(finding, getSafeFindingEvidence(finding, settings)),
+        {
+          scope: "export",
+          settings,
+        },
+      ),
     );
 
     if (copied) {
@@ -103,6 +113,7 @@ export function ResourceFindingsTab({
         <p className="text-muted-foreground mt-2 text-sm leading-6">
           These findings are scoped to this resource only and use the same deterministic Terraform risk rules as the main findings panel.
         </p>
+        <ExportTrustNote />
       </div>
 
       <div className="space-y-3">
@@ -116,7 +127,7 @@ export function ResourceFindingsTab({
                   ? "error"
                   : "idle"
             }
-            evidence={getSafeFindingEvidence(finding)}
+            evidence={getSafeFindingEvidence(finding, settings)}
             finding={finding}
             onCopy={() => {
               void handleCopyFinding(finding);

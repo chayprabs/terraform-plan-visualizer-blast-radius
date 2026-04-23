@@ -1,0 +1,30 @@
+export const SECRET_TEST_VALUES = {
+  awsAccessKey: ["AKIA", "IOSFODNN7EXAMPLE"].join(""),
+  bearerToken: [
+    "Bearer ",
+    "eyJhbGciOi",
+    "JIUzI1NiIs",
+    "InR5cCI6Ik",
+    "pXVCJ9",
+  ].join(""),
+  githubToken: ["gh", "p_", "abcdefghijklmnopqrstuvwxyz", "123456"].join(""),
+  privateKey: [
+    "-----BEGIN ",
+    "PRIVATE KEY",
+    "-----\n",
+    "abc\n",
+    "-----END ",
+    "PRIVATE KEY",
+    "-----",
+  ].join(""),
+  slackToken: [
+    "xo",
+    "xb-",
+    "123456789012",
+    "-",
+    "123456789012",
+    "-",
+    "abcdefghijklmnop",
+  ].join(""),
+  stripeKey: ["sk", "_live_", "1234567890ABCDE"].join(""),
+} as const;

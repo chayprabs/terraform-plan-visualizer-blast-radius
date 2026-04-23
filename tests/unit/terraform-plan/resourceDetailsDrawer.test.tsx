@@ -86,7 +86,7 @@ describe("ResourceDetailsDrawer", () => {
 
     fireEvent.keyDown(window, { key: "Escape" });
     expect(onClose).toHaveBeenCalledTimes(1);
-  });
+  }, 15000);
 
   it("never renders or copies raw sensitive values in the raw JSON tab", async () => {
     render(

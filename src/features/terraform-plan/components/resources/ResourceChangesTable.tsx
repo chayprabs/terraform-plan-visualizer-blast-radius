@@ -1,6 +1,7 @@
 "use client";
 
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { usePrivacyRedaction } from "@/features/terraform-plan/components/privacy/PrivacyRedactionContext";
 import type { ChangeActionKind } from "@/features/terraform-plan/domain/actionTypes";
 import type { NormalizedPlan } from "@/features/terraform-plan/domain/normalizedPlanTypes";
 import type { ResourceTypeGroup } from "@/features/terraform-plan/domain/providerTypes";
@@ -19,8 +20,11 @@ import {
   type ResourceSeverityValue,
   type ResourceTableSortField,
 } from "@/features/terraform-plan/components/resources/resourceTableModel";
+import { redactText } from "@/features/terraform-plan/privacy/redactTerraformPlan";
 
 interface ResourceChangesTableProps {
+  blastRadiusAddresses?: ReadonlySet<string> | null;
+  blastRadiusFocusAddress?: string | null;
   hasAnalyzed: boolean;
   normalizedPlan: NormalizedPlan | null;
   onOpenResource?: (address: string) => void;
@@ -75,11 +79,14 @@ function PlaceholderState({
 }
 
 export function ResourceChangesTable({
+  blastRadiusAddresses = null,
+  blastRadiusFocusAddress = null,
   hasAnalyzed,
   normalizedPlan,
   onOpenResource,
   selectedAddress = null,
 }: ResourceChangesTableProps) {
+  const { settings } = usePrivacyRedaction();
   const [search, setSearch] = useState("");
   const [action, setAction] = useState<ChangeActionKind | "all">("all");
   const [provider, setProvider] = useState<string | "all">("all");
@@ -88,6 +95,8 @@ export function ResourceChangesTable({
     "all",
   );
   const [severity, setSeverity] = useState<ResourceSeverityValue | "all">("all");
+  const [inSelectedBlastRadiusOnly, setInSelectedBlastRadiusOnly] =
+    useState(false);
   const [includeNoOp, setIncludeNoOp] = useState(() =>
     normalizedPlan ? shouldIncludeNoOpByDefault(normalizedPlan) : true,
   );
@@ -100,6 +109,8 @@ export function ResourceChangesTable({
     filteredListState: "idle",
   });
   const deferredSearch = useDeferredValue(search);
+  const effectiveInSelectedBlastRadiusOnly =
+    inSelectedBlastRadiusOnly && Boolean(blastRadiusFocusAddress);
 
   const tableItems = useMemo(
     () => buildResourceTableItems(normalizedPlan?.resourceChanges ?? []),
@@ -113,7 +124,9 @@ export function ResourceChangesTable({
     () =>
       filterAndSortResourceTableItems(tableItems, {
         action,
+        blastRadiusAddressSet: blastRadiusAddresses,
         includeNoOp,
+        inSelectedBlastRadiusOnly: effectiveInSelectedBlastRadiusOnly,
         module,
         provider,
         resourceGroup,
@@ -123,7 +136,9 @@ export function ResourceChangesTable({
       }),
     [
       action,
+      blastRadiusAddresses,
       deferredSearch,
+      effectiveInSelectedBlastRadiusOnly,
       includeNoOp,
       module,
       provider,
@@ -194,7 +209,12 @@ export function ResourceChangesTable({
   }
 
   const handleCopyAddress = async (address: string) => {
-    const copied = await copyText(address);
+    const copied = await copyText(
+      redactText(address, {
+        scope: "export",
+        settings,
+      }),
+    );
 
     setCopyState((current) => ({
       ...current,
@@ -204,7 +224,12 @@ export function ResourceChangesTable({
   };
 
   const handleCopyFiltered = async () => {
-    const copied = await copyText(formatResourceListCopy(filteredItems));
+    const copied = await copyText(
+      redactText(formatResourceListCopy(filteredItems), {
+        scope: "export",
+        settings,
+      }),
+    );
 
     setCopyState((current) => ({
       ...current,
@@ -228,10 +253,14 @@ export function ResourceChangesTable({
       <ResourceFilters
         action={action}
         actionOptions={filterOptions.actionOptions}
+        blastRadiusCount={blastRadiusAddresses?.size ?? 0}
+        blastRadiusFocusAddress={blastRadiusFocusAddress}
         includeNoOp={includeNoOp}
+        inSelectedBlastRadiusOnly={effectiveInSelectedBlastRadiusOnly}
         module={module}
         moduleOptions={filterOptions.moduleOptions}
         onActionChange={setAction}
+        onInSelectedBlastRadiusOnlyChange={setInSelectedBlastRadiusOnly}
         onIncludeNoOpChange={setIncludeNoOp}
         onModuleChange={setModule}
         onProviderChange={setProvider}

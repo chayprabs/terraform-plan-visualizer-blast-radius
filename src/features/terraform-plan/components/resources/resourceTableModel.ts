@@ -43,7 +43,9 @@ export interface ResourceTableItem {
 
 export interface ResourceTableFilterState {
   action: ChangeActionKind | "all";
+  blastRadiusAddressSet?: ReadonlySet<string> | null;
   includeNoOp: boolean;
+  inSelectedBlastRadiusOnly?: boolean;
   module: string | "all";
   provider: string | "all";
   resourceGroup: ResourceTypeGroup | "all";
@@ -343,6 +345,13 @@ export function filterAndSortResourceTableItems(
     if (
       filters.resourceGroup !== "all" &&
       item.resourceGroup !== filters.resourceGroup
+    ) {
+      return false;
+    }
+
+    if (
+      filters.inSelectedBlastRadiusOnly &&
+      !filters.blastRadiusAddressSet?.has(item.address)
     ) {
       return false;
     }

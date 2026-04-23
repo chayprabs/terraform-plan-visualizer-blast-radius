@@ -4,34 +4,28 @@ import {
   getRiskCategoryLabel,
   getRiskSeverityLabel,
 } from "@/features/terraform-plan/risk/riskCopy";
-
-const SENSITIVE_VALUE_PATTERN =
-  /(password|secret|token|credential|private[_-]?key|client[_-]?secret|access[_-]?key)/i;
+import { redactText } from "@/features/terraform-plan/privacy/redactTerraformPlan";
+import {
+  DEFAULT_TERRAFORM_PLAN_REDACTION_SETTINGS,
+  type TerraformPlanRedactionSettings,
+} from "@/features/terraform-plan/privacy/redactionTypes";
 
 export function redactFindingEvidenceLine(
   line: string,
-  forceRedaction: boolean,
+  settings: TerraformPlanRedactionSettings = DEFAULT_TERRAFORM_PLAN_REDACTION_SETTINGS,
 ): string {
-  if (!forceRedaction && !SENSITIVE_VALUE_PATTERN.test(line)) {
-    return line;
-  }
-
-  if (/\[redacted\]/i.test(line)) {
-    return line;
-  }
-
-  if (/[=:]/.test(line)) {
-    return line.replace(/([=:]\s*).+$/, "$1[redacted]");
-  }
-
-  return line
-    .replace(/"[^"]+"/g, '"[redacted]"')
-    .replace(/'[^']+'/g, "'[redacted]'");
+  return redactText(line, {
+    scope: "display",
+    settings,
+  });
 }
 
-export function getSafeFindingEvidence(finding: RiskFinding): string[] {
+export function getSafeFindingEvidence(
+  finding: RiskFinding,
+  settings: TerraformPlanRedactionSettings = DEFAULT_TERRAFORM_PLAN_REDACTION_SETTINGS,
+): string[] {
   return finding.evidence.map((line) =>
-    redactFindingEvidenceLine(line, finding.category === "secrets"),
+    redactFindingEvidenceLine(line, settings),
   );
 }
 

@@ -1,4 +1,23 @@
 @import "tailwindcss";
+@import "@xyflow/react/dist/style.css";
+
+.react-flow__attribution {
+  display: none;
+}
+
+.react-flow__controls {
+  box-shadow: none;
+}
+
+.react-flow__controls-button {
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--foreground);
+}
+
+.react-flow__controls-button:hover {
+  background: var(--surface-muted);
+}
 
 :root {
   color-scheme: light;

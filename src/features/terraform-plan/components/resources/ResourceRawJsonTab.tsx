@@ -1,65 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { ExportTrustNote } from "@/features/terraform-plan/components/privacy/ExportTrustNote";
+import { usePrivacyRedaction } from "@/features/terraform-plan/components/privacy/PrivacyRedactionContext";
 import type { NormalizedResourceChange } from "@/features/terraform-plan/domain/normalizedPlanTypes";
+import { redactTerraformResourceChangeRaw } from "@/features/terraform-plan/privacy/redactTerraformPlan";
 import { cn } from "@/lib/utils";
 
 interface ResourceRawJsonTabProps {
   resourceChange: NormalizedResourceChange;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function applySensitiveMask(value: unknown, mask: unknown): unknown {
-  if (mask === true) {
-    return "[sensitive value]";
-  }
-
-  if (Array.isArray(value)) {
-    const maskEntries = Array.isArray(mask) ? mask : [];
-    return value.map((entry, index) => applySensitiveMask(entry, maskEntries[index]));
-  }
-
-  if (isRecord(value)) {
-    const maskRecord = isRecord(mask) ? mask : {};
-    const keys = Array.from(
-      new Set([...Object.keys(value), ...Object.keys(maskRecord)]),
-    ).sort();
-    const nextValue: Record<string, unknown> = {};
-
-    for (const key of keys) {
-      const maskedValue = applySensitiveMask(value[key], maskRecord[key]);
-
-      if (maskedValue !== undefined || key in value || maskRecord[key] === true) {
-        nextValue[key] = maskedValue;
-      }
-    }
-
-    return nextValue;
-  }
-
-  return value;
-}
-
-function buildRedactedResourceJson(
-  resourceChange: NormalizedResourceChange,
-): Record<string, unknown> {
-  return {
-    ...resourceChange.raw,
-    change: {
-      ...resourceChange.raw.change,
-      before: applySensitiveMask(
-        resourceChange.raw.change.before,
-        resourceChange.raw.change.before_sensitive,
-      ),
-      after: applySensitiveMask(
-        resourceChange.raw.change.after,
-        resourceChange.raw.change.after_sensitive,
-      ),
-    },
-  };
 }
 
 async function copyText(value: string): Promise<boolean> {
@@ -89,14 +38,31 @@ async function copyText(value: string): Promise<boolean> {
 export function ResourceRawJsonTab({
   resourceChange,
 }: ResourceRawJsonTabProps) {
+  const { settings } = usePrivacyRedaction();
   const [copyState, setCopyState] = useState<"copied" | "error" | "idle">("idle");
-  const redactedJson = useMemo(
-    () => buildRedactedResourceJson(resourceChange),
-    [resourceChange],
+  const displayRedactedJson = useMemo(
+    () =>
+      redactTerraformResourceChangeRaw(resourceChange.raw, {
+        scope: "display",
+        settings,
+      }),
+    [resourceChange.raw, settings],
   );
-  const redactedJsonText = useMemo(
-    () => JSON.stringify(redactedJson, null, 2),
-    [redactedJson],
+  const exportRedactedJson = useMemo(
+    () =>
+      redactTerraformResourceChangeRaw(resourceChange.raw, {
+        scope: "export",
+        settings,
+      }),
+    [resourceChange.raw, settings],
+  );
+  const displayRedactedJsonText = useMemo(
+    () => JSON.stringify(displayRedactedJson, null, 2),
+    [displayRedactedJson],
+  );
+  const exportRedactedJsonText = useMemo(
+    () => JSON.stringify(exportRedactedJson, null, 2),
+    [exportRedactedJson],
   );
 
   useEffect(() => {
@@ -110,7 +76,7 @@ export function ResourceRawJsonTab({
   }, [copyState]);
 
   const handleCopy = async () => {
-    const copied = await copyText(redactedJsonText);
+    const copied = await copyText(exportRedactedJsonText);
     setCopyState(copied ? "copied" : "error");
   };
 
@@ -123,8 +89,10 @@ export function ResourceRawJsonTab({
             <p className="text-muted-foreground mt-2 text-sm leading-6">
               Sensitive values are masked using Terraform&apos;s
               `before_sensitive` and `after_sensitive` metadata before this JSON
-              is rendered or copied.
+              is rendered or copied. Secret-like strings are also masked when
+              detection is enabled.
             </p>
+            <ExportTrustNote />
           </div>
 
           <button
@@ -156,7 +124,7 @@ export function ResourceRawJsonTab({
           className="max-h-[34rem] overflow-auto p-4 text-xs leading-6 text-foreground sm:p-5 sm:text-sm"
           aria-label="Redacted resource change JSON"
         >
-          {redactedJsonText}
+          {displayRedactedJsonText}
         </pre>
       </div>
     </section>

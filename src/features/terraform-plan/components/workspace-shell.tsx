@@ -12,8 +12,13 @@ import {
   riskyPlan,
   tinyPlan,
 } from "@/features/terraform-plan/fixtures/samplePlans";
+import { BlastRadiusPanel } from "@/features/terraform-plan/components/blast-radius/BlastRadiusPanel";
+import { buildBlastRadiusAnalysis } from "@/features/terraform-plan/components/blast-radius/blastRadiusModel";
 import { RiskFindingsPanel } from "@/features/terraform-plan/components/findings/RiskFindingsPanel";
+import { PlanGraphView } from "@/features/terraform-plan/components/graph/PlanGraphView";
 import { PlanInputPanel } from "@/features/terraform-plan/components/input/PlanInputPanel";
+import { PrivacyRedactionPanel } from "@/features/terraform-plan/components/privacy/PrivacyRedactionPanel";
+import { PrivacyRedactionProvider } from "@/features/terraform-plan/components/privacy/PrivacyRedactionContext";
 import {
   ResourceDetailsDrawer,
   type ResourceDetailsTabKey,
@@ -30,6 +35,10 @@ import {
   DEFAULT_MAX_TERRAFORM_PLAN_INPUT_BYTES,
   type AnalysisError,
 } from "@/features/terraform-plan/worker/workerMessages";
+import {
+  DEFAULT_TERRAFORM_PLAN_REDACTION_SETTINGS,
+  type TerraformPlanRedactionSettings,
+} from "@/features/terraform-plan/privacy/redactionTypes";
 import { cn } from "@/lib/utils";
 
 const samplePlanMap = {
@@ -144,6 +153,12 @@ export function WorkspaceShell() {
   const [localInputError, setLocalInputError] = useState<PlanInputNotice | null>(
     null,
   );
+  const [privacySettings, setPrivacySettings] =
+    useState<TerraformPlanRedactionSettings>(
+      DEFAULT_TERRAFORM_PLAN_REDACTION_SETTINGS,
+    );
+  const [blastRadiusFocusAddress, setBlastRadiusFocusAddress] =
+    useState<string | null>(null);
   const [selectedResource, setSelectedResource] =
     useState<SelectedResourceState | null>(null);
   const [sourceName, setSourceName] = useState<string>();
@@ -152,12 +167,28 @@ export function WorkspaceShell() {
   const isBusy = status === "parsing" || status === "analyzing";
   const canAnalyze = draftText.trim().length > 0 && localInputError === null;
   const analyzedPlan = status === "success" ? normalizedPlan : null;
+  const effectiveBlastRadiusFocusAddress = useMemo(
+    () =>
+      analyzedPlan?.resourceChanges.some(
+        (resourceChange) => resourceChange.address === blastRadiusFocusAddress,
+      )
+        ? blastRadiusFocusAddress
+        : null,
+    [analyzedPlan, blastRadiusFocusAddress],
+  );
   const selectedResourceChange = useMemo(
     () =>
       analyzedPlan?.resourceChanges.find(
         (resourceChange) => resourceChange.address === selectedResource?.address,
       ) ?? null,
     [analyzedPlan, selectedResource],
+  );
+  const blastRadiusAnalysis = useMemo(
+    () =>
+      analyzedPlan
+        ? buildBlastRadiusAnalysis(analyzedPlan, effectiveBlastRadiusFocusAddress)
+        : null,
+    [analyzedPlan, effectiveBlastRadiusFocusAddress],
   );
 
   const runAutoAnalysis = useEffectEvent(() => {
@@ -195,6 +226,7 @@ export function WorkspaceShell() {
       setDraftText(nextValue);
       setUploadedFile(null);
       setSourceName(undefined);
+      setBlastRadiusFocusAddress(null);
       setSelectedResource(null);
       setLocalInputError(null);
       reset();
@@ -207,6 +239,7 @@ export function WorkspaceShell() {
     setAutoAnalyze(false);
     setCopyState("idle");
     setDraftText("");
+    setBlastRadiusFocusAddress(null);
     setLocalInputError(null);
     setSelectedResource(null);
     setSourceName(undefined);
@@ -219,6 +252,7 @@ export function WorkspaceShell() {
       return;
     }
 
+    setBlastRadiusFocusAddress(null);
     setSelectedResource(null);
     analyzeText(draftText, sourceName);
   }, [analyzeText, canAnalyze, draftText, sourceName]);
@@ -255,6 +289,7 @@ export function WorkspaceShell() {
         setActiveTab("paste");
         setAutoAnalyze(true);
         setDraftText(nextText);
+        setBlastRadiusFocusAddress(null);
         setLocalInputError(null);
         setSelectedResource(null);
         setSourceName(`${sampleKey}.json`);
@@ -274,6 +309,7 @@ export function WorkspaceShell() {
 
       setActiveTab("upload");
       setUploadedFile(nextFileInfo);
+      setBlastRadiusFocusAddress(null);
       setSelectedResource(null);
       setSourceName(file.name);
 
@@ -317,12 +353,34 @@ export function WorkspaceShell() {
 
   const handleOpenResource = useCallback(
     (address: string, initialTab: ResourceDetailsTabKey) => {
+      if (analyzedPlan?.resourceChanges.some((resource) => resource.address === address)) {
+        setBlastRadiusFocusAddress(address);
+      }
+
       setSelectedResource({
         address,
         initialTab,
       });
     },
-    [],
+    [analyzedPlan],
+  );
+  const handleSelectBlastRadiusFocus = useCallback(
+    (address: string | null) => {
+      setBlastRadiusFocusAddress(address);
+
+      if (!address) {
+        setSelectedResource((current) =>
+          current?.address === blastRadiusFocusAddress ? null : current,
+        );
+        return;
+      }
+
+      setSelectedResource({
+        address,
+        initialTab: "overview",
+      });
+    },
+    [blastRadiusFocusAddress],
   );
 
   const inputNotice = useMemo<PlanInputNotice>(() => {
@@ -440,7 +498,9 @@ export function WorkspaceShell() {
                 Analysis output
               </h3>
               <p className="text-muted-foreground mt-1 text-sm leading-7">
-                Status, summary metrics, risk findings, resource review data, provider and module breakdowns, and output metadata update here after each analysis run.
+                Status, summary metrics, risk findings, dependency graph topology,
+                resource review data, provider and module breakdowns, and output
+                metadata update here after each analysis run.
               </p>
             </div>
 
@@ -501,57 +561,100 @@ export function WorkspaceShell() {
 
             {(status === "idle" || status === "success") && (
               <div className="space-y-4">
-                {status === "success" && normalizedPlan ? (
-                  <div className="border-border bg-surface rounded-lg border p-4">
-                    <p className="text-foreground text-sm font-semibold">
-                      Analyzed source
-                    </p>
-                    <p className="text-muted-foreground mt-2 text-sm leading-6">
-                      {getSourceLabel(analyzedSourceName, uploadedFile)}
-                    </p>
-                  </div>
-                ) : null}
+                <PrivacyRedactionProvider settings={privacySettings}>
+                  {status === "success" && normalizedPlan ? (
+                    <div className="border-border bg-surface rounded-lg border p-4">
+                      <p className="text-foreground text-sm font-semibold">
+                        Analyzed source
+                      </p>
+                      <p className="text-muted-foreground mt-2 text-sm leading-6">
+                        {getSourceLabel(analyzedSourceName, uploadedFile)}
+                      </p>
+                    </div>
+                  ) : null}
 
-                <PlanSummaryDashboard
-                  hasAnalyzed={status === "success"}
-                  normalizedPlan={analyzedPlan}
-                />
-
-                <RiskFindingsPanel
-                  key={
-                    analyzedPlan
-                      ? `${analyzedSourceName ?? "plan"}:${analyzedPlan.timestamp ?? ""}:${analyzedPlan.resourceChanges.length}:${analyzedPlan.outputChanges.length}:${analyzedPlan.riskReport?.score ?? 0}:${analyzedPlan.riskReport?.findings.length ?? 0}`
-                      : "risk-findings-idle"
-                  }
-                  hasAnalyzed={status === "success"}
-                  normalizedPlan={analyzedPlan}
-                  onOpenResource={(address) => {
-                    handleOpenResource(address, "findings");
-                  }}
-                />
-
-                <ResourceChangesTable
-                  key={
-                    analyzedPlan
-                      ? `${analyzedSourceName ?? "plan"}:${analyzedPlan.timestamp ?? ""}:${analyzedPlan.resourceChanges.length}:${analyzedPlan.summary.noOpCount}:${analyzedPlan.riskReport?.score ?? 0}`
-                      : "resource-table-idle"
-                  }
-                  hasAnalyzed={status === "success"}
-                  normalizedPlan={analyzedPlan}
-                  onOpenResource={(address) => {
-                    handleOpenResource(address, "overview");
-                  }}
-                  selectedAddress={selectedResource?.address ?? null}
-                />
-
-                {selectedResourceChange ? (
-                  <ResourceDetailsDrawer
-                    key={`${selectedResource?.address ?? "resource"}:${selectedResource?.initialTab ?? "overview"}`}
-                    initialTab={selectedResource?.initialTab ?? "overview"}
-                    onClose={() => setSelectedResource(null)}
-                    resourceChange={selectedResourceChange}
+                  <PlanSummaryDashboard
+                    hasAnalyzed={status === "success"}
+                    normalizedPlan={analyzedPlan}
                   />
-                ) : null}
+
+                  <PrivacyRedactionPanel
+                    blastRadiusAnalysis={blastRadiusAnalysis}
+                    hasAnalyzed={status === "success"}
+                    normalizedPlan={analyzedPlan}
+                    onSettingsChange={setPrivacySettings}
+                    settings={privacySettings}
+                    sourceName={analyzedSourceName}
+                  />
+
+                  <RiskFindingsPanel
+                    key={
+                      analyzedPlan
+                        ? `${analyzedSourceName ?? "plan"}:${analyzedPlan.timestamp ?? ""}:${analyzedPlan.resourceChanges.length}:${analyzedPlan.outputChanges.length}:${analyzedPlan.riskReport?.score ?? 0}:${analyzedPlan.riskReport?.findings.length ?? 0}`
+                        : "risk-findings-idle"
+                    }
+                    hasAnalyzed={status === "success"}
+                    normalizedPlan={analyzedPlan}
+                    onOpenResource={(address) => {
+                      handleOpenResource(address, "findings");
+                    }}
+                  />
+
+                  <PlanGraphView
+                    key={
+                      analyzedPlan
+                        ? `${analyzedSourceName ?? "plan"}:${analyzedPlan.timestamp ?? ""}:${analyzedPlan.resourceChanges.length}:${analyzedPlan.summary.noOpCount}:${analyzedPlan.riskReport?.score ?? 0}:graph`
+                        : "plan-graph-idle"
+                    }
+                    blastRadiusDownstreamIds={blastRadiusAnalysis?.downstream.map(
+                      (node) => node.id,
+                    )}
+                    blastRadiusFocusAddress={blastRadiusAnalysis?.focusAddress ?? null}
+                    blastRadiusNodeIds={blastRadiusAnalysis?.radiusNodeIds}
+                    blastRadiusUpstreamIds={blastRadiusAnalysis?.upstream.map(
+                      (node) => node.id,
+                    )}
+                    hasAnalyzed={status === "success"}
+                    normalizedPlan={analyzedPlan}
+                    onOpenResource={handleOpenResource}
+                    selectedAddress={selectedResource?.address ?? null}
+                  />
+
+                  <BlastRadiusPanel
+                    analysis={blastRadiusAnalysis}
+                    hasAnalyzed={status === "success"}
+                    onSelectFocus={handleSelectBlastRadiusFocus}
+                  />
+
+                  <ResourceChangesTable
+                    key={
+                      analyzedPlan
+                        ? `${analyzedSourceName ?? "plan"}:${analyzedPlan.timestamp ?? ""}:${analyzedPlan.resourceChanges.length}:${analyzedPlan.summary.noOpCount}:${analyzedPlan.riskReport?.score ?? 0}`
+                        : "resource-table-idle"
+                    }
+                    blastRadiusAddresses={
+                      blastRadiusAnalysis
+                        ? new Set(blastRadiusAnalysis.radiusNodeIds)
+                        : null
+                    }
+                    blastRadiusFocusAddress={blastRadiusAnalysis?.focusAddress ?? null}
+                    hasAnalyzed={status === "success"}
+                    normalizedPlan={analyzedPlan}
+                    onOpenResource={(address) => {
+                      handleOpenResource(address, "overview");
+                    }}
+                    selectedAddress={selectedResource?.address ?? null}
+                  />
+
+                  {selectedResourceChange ? (
+                    <ResourceDetailsDrawer
+                      key={`${selectedResource?.address ?? "resource"}:${selectedResource?.initialTab ?? "overview"}`}
+                      initialTab={selectedResource?.initialTab ?? "overview"}
+                      onClose={() => setSelectedResource(null)}
+                      resourceChange={selectedResourceChange}
+                    />
+                  ) : null}
+                </PrivacyRedactionProvider>
               </div>
             )}
 

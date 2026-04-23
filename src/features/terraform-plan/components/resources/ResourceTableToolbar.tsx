@@ -1,3 +1,4 @@
+import { ExportTrustNote } from "@/features/terraform-plan/components/privacy/ExportTrustNote";
 import {
   RESOURCE_TABLE_SORT_FIELDS,
   type ResourceTableSortField,
@@ -86,6 +87,8 @@ export function ResourceTableToolbar({
           </button>
         </div>
       </div>
+
+      <ExportTrustNote />
     </section>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
+import { usePrivacyRedaction } from "@/features/terraform-plan/components/privacy/PrivacyRedactionContext";
 import type { NormalizedResourceChange } from "@/features/terraform-plan/domain/normalizedPlanTypes";
 import { ResourceDependencyTab } from "@/features/terraform-plan/components/resources/ResourceDependencyTab";
 import { ResourceDetailsHeader } from "@/features/terraform-plan/components/resources/ResourceDetailsHeader";
@@ -8,6 +9,7 @@ import { ResourceDiffTab } from "@/features/terraform-plan/components/resources/
 import { ResourceFindingsTab } from "@/features/terraform-plan/components/resources/ResourceFindingsTab";
 import { ResourceOverviewTab } from "@/features/terraform-plan/components/resources/ResourceOverviewTab";
 import { ResourceRawJsonTab } from "@/features/terraform-plan/components/resources/ResourceRawJsonTab";
+import { redactText } from "@/features/terraform-plan/privacy/redactTerraformPlan";
 import { cn } from "@/lib/utils";
 
 export type ResourceDetailsTabKey =
@@ -63,6 +65,7 @@ export function ResourceDetailsDrawer({
   onClose,
   resourceChange,
 }: ResourceDetailsDrawerProps) {
+  const { settings } = usePrivacyRedaction();
   const titleId = useId();
   const [activeTab, setActiveTab] = useState<ResourceDetailsTabKey>(initialTab);
   const [copyState, setCopyState] = useState<"copied" | "error" | "idle">("idle");
@@ -90,7 +93,12 @@ export function ResourceDetailsDrawer({
   }, [onClose]);
 
   const handleCopyAddress = async () => {
-    const copied = await copyText(resourceChange.address);
+    const copied = await copyText(
+      redactText(resourceChange.address, {
+        scope: "export",
+        settings,
+      }),
+    );
     setCopyState(copied ? "copied" : "error");
   };
 
