@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { startTransition, useEffect, useId, useState } from "react";
 import { usePrivacyRedaction } from "@/features/terraform-plan/components/privacy/PrivacyRedactionContext";
 import type { NormalizedResourceChange } from "@/features/terraform-plan/domain/normalizedPlanTypes";
 import { ResourceDependencyTab } from "@/features/terraform-plan/components/resources/ResourceDependencyTab";
@@ -20,8 +20,10 @@ export type ResourceDetailsTabKey =
   | "dependencies";
 
 interface ResourceDetailsDrawerProps {
+  activeTab?: ResourceDetailsTabKey;
   initialTab?: ResourceDetailsTabKey;
   onClose: () => void;
+  onActiveTabChange?: (tab: ResourceDetailsTabKey) => void;
   resourceChange: NormalizedResourceChange;
 }
 
@@ -61,14 +63,25 @@ async function copyText(value: string): Promise<boolean> {
 }
 
 export function ResourceDetailsDrawer({
+  activeTab: controlledActiveTab,
   initialTab = "overview",
   onClose,
+  onActiveTabChange,
   resourceChange,
 }: ResourceDetailsDrawerProps) {
   const { settings } = usePrivacyRedaction();
   const titleId = useId();
-  const [activeTab, setActiveTab] = useState<ResourceDetailsTabKey>(initialTab);
+  const [activeTabState, setActiveTabState] = useState<ResourceDetailsTabKey>(initialTab);
   const [copyState, setCopyState] = useState<"copied" | "error" | "idle">("idle");
+  const resolvedActiveTab = controlledActiveTab ?? activeTabState;
+
+  useEffect(() => {
+    if (!controlledActiveTab) {
+      startTransition(() => {
+        setActiveTabState(initialTab);
+      });
+    }
+  }, [controlledActiveTab, initialTab]);
 
   useEffect(() => {
     if (copyState === "idle") {
@@ -138,14 +151,20 @@ export function ResourceDetailsDrawer({
                 key={tab.key}
                 type="button"
                 role="tab"
-                aria-selected={activeTab === tab.key}
+                aria-selected={resolvedActiveTab === tab.key}
                 className={cn(
                   "rounded-md px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors",
-                  activeTab === tab.key
+                  resolvedActiveTab === tab.key
                     ? "bg-background text-foreground"
                     : "text-muted-foreground hover:text-foreground",
                 )}
-                onClick={() => setActiveTab(tab.key)}
+                onClick={() => {
+                  if (!controlledActiveTab) {
+                    setActiveTabState(tab.key);
+                  }
+
+                  onActiveTabChange?.(tab.key);
+                }}
               >
                 {tab.label}
               </button>
@@ -154,19 +173,19 @@ export function ResourceDetailsDrawer({
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-5">
-          {activeTab === "overview" ? (
+          {resolvedActiveTab === "overview" ? (
             <ResourceOverviewTab resourceChange={resourceChange} />
           ) : null}
-          {activeTab === "diff" ? (
+          {resolvedActiveTab === "diff" ? (
             <ResourceDiffTab resourceChange={resourceChange} />
           ) : null}
-          {activeTab === "findings" ? (
+          {resolvedActiveTab === "findings" ? (
             <ResourceFindingsTab resourceChange={resourceChange} />
           ) : null}
-          {activeTab === "raw-json" ? (
+          {resolvedActiveTab === "raw-json" ? (
             <ResourceRawJsonTab resourceChange={resourceChange} />
           ) : null}
-          {activeTab === "dependencies" ? <ResourceDependencyTab /> : null}
+          {resolvedActiveTab === "dependencies" ? <ResourceDependencyTab /> : null}
         </div>
       </div>
     </div>

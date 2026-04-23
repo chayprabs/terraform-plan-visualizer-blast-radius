@@ -1,5 +1,11 @@
 import type { NormalizedPlan } from "@/features/terraform-plan/domain/normalizedPlanTypes";
 import {
+  formatCostThresholdSummary,
+  formatCurrencyAmount,
+  formatMonthlyDelta,
+  getCostSeverityForDelta,
+} from "@/features/terraform-plan/cost/costUtils";
+import {
   buildOverallRiskSummary,
   buildModuleBreakdownRows,
   buildOutputChangeSummary,
@@ -51,6 +57,13 @@ export function PlanSummaryDashboard({
   const overallRisk = buildOverallRiskSummary(normalizedPlan);
   const hasChanges = hasMeaningfulResourceChanges(normalizedPlan.summary);
   const overallRiskTone = getRiskLevelTone(overallRisk.level);
+  const costImpact = normalizedPlan.costEstimate ?? null;
+  const costSeverity = costImpact
+    ? getCostSeverityForDelta(
+        costImpact.totalMonthlyDelta,
+        costImpact.thresholds,
+      )
+    : null;
 
   return (
     <div className="space-y-4" aria-label="Plan summary dashboard">
@@ -102,6 +115,58 @@ export function PlanSummaryDashboard({
           Critical and high-severity findings in this plan.
         </p>
       </section>
+
+      {costImpact ? (
+        <section className="border-border bg-surface rounded-lg border p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-foreground text-sm font-semibold">
+                Cost impact
+              </p>
+              <p className="text-muted-foreground mt-1 text-sm leading-6">
+                Optional local cost context from imported Infracost JSON or
+                manual estimates.
+              </p>
+            </div>
+            <span
+              className={cn(
+                "inline-flex rounded-full border px-3 py-1 text-sm font-semibold",
+                costSeverity === "critical" &&
+                  "border-critical bg-critical-soft text-critical",
+                costSeverity === "high" &&
+                  "border-warning bg-warning-soft text-warning",
+                costSeverity === "medium" &&
+                  "border-warning bg-warning-soft text-warning",
+                !costSeverity &&
+                  "border-border bg-background text-muted-foreground",
+              )}
+            >
+              {costImpact.source}
+            </span>
+          </div>
+
+          <p className="text-foreground mt-4 text-3xl font-semibold tracking-tight">
+            {formatMonthlyDelta(costImpact.totalMonthlyDelta, costImpact.currency)}
+          </p>
+          <p className="text-muted-foreground mt-2 text-sm leading-6">
+            Before {formatCurrencyAmount(costImpact.totalMonthlyCostBefore, costImpact.currency)}.
+            After {formatCurrencyAmount(costImpact.totalMonthlyCostAfter, costImpact.currency)}.
+          </p>
+          <p className="text-muted-foreground mt-2 text-sm leading-6">
+            {costImpact.mappedResourceCount} mapped resources. Thresholds:{" "}
+            {formatCostThresholdSummary(
+              costImpact.thresholds,
+              costImpact.currency,
+            )}
+            .
+          </p>
+          {costImpact.note ? (
+            <p className="text-foreground mt-3 text-sm leading-6">
+              Reviewer note: {costImpact.note}
+            </p>
+          ) : null}
+        </section>
+      ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {metrics.map((metric) => (

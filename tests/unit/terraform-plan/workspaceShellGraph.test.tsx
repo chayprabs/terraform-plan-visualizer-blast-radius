@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ComponentType, ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WorkspaceShell } from "@/features/terraform-plan/components/workspace-shell";
 import { normalizeTerraformPlan } from "@/features/terraform-plan/domain/normalizeTerraformPlan";
 import { riskyPlan } from "@/features/terraform-plan/fixtures/samplePlans";
@@ -99,6 +99,12 @@ vi.mock("@xyflow/react", async () => {
 });
 
 describe("WorkspaceShell graph integration", () => {
+  beforeEach(() => {
+    window.history.replaceState({}, "", "/tools/terraform-plan-visualizer");
+    window.localStorage.clear();
+    document.documentElement.removeAttribute("data-theme");
+  });
+
   it("opens the resource details drawer when a graph node is clicked", async () => {
     const normalizedPlan = normalizeTerraformPlan(riskyPlan);
     useTerraformPlanAnalyzerMock.mockReturnValue({
@@ -166,5 +172,58 @@ describe("WorkspaceShell graph integration", () => {
     expect(
       within(table).queryByText(/module\.identity\.aws_iam_role\.worker/i),
     ).not.toBeInTheDocument();
+  });
+
+  it("restores selected tabs and filters from the URL without serializing plan data", async () => {
+    const normalizedPlan = normalizeTerraformPlan(riskyPlan);
+    useTerraformPlanAnalyzerMock.mockReturnValue({
+      analyzeText: () => undefined,
+      error: null,
+      normalizedPlan,
+      progressMessage: undefined,
+      reset: () => undefined,
+      sourceName: "riskyPlan.json",
+      status: "success" as const,
+      warnings: [],
+    });
+
+    window.history.replaceState(
+      {},
+      "",
+      "/tools/terraform-plan-visualizer?it=upload&fa=replace&fh=1&fg=resource&fs=aws_db_instance&ra=replace&rs=primary&rso=address&ga=replace&gco=1&gdep=1&gr=critical&sr=module.data.aws_db_instance.primary&rt=findings&br=module.data.aws_db_instance.primary",
+    );
+
+    render(<WorkspaceShell />);
+
+    const dialog = await screen.findByRole("dialog", {
+      name: /module\.data\.aws_db_instance\.primary/i,
+    });
+
+    expect(
+      screen.getByRole("tab", { name: /Upload file/i }),
+    ).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByLabelText(/^Action kind$/i)).toHaveValue("replace");
+    expect(screen.getByLabelText(/Show high risk only/i)).toBeChecked();
+    expect(
+      screen.getByRole("button", { name: /Group by resource/i }),
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByLabelText(/Search findings/i)).toHaveValue(
+      "aws_db_instance",
+    );
+    expect(screen.getByLabelText(/Search resources/i)).toHaveValue("primary");
+    expect(screen.getByLabelText(/Sort resources/i)).toHaveValue("address");
+    expect(screen.getByLabelText(/Blast radius focus resource/i)).toHaveValue(
+      "module.data.aws_db_instance.primary",
+    );
+    expect(
+      screen.getByLabelText(/Remember recent analyses on this device/i),
+    ).not.toBeChecked();
+    expect(
+      within(dialog).getByRole("tab", { name: /^Findings$/i }),
+    ).toHaveAttribute("aria-selected", "true");
+    expect(window.location.search).not.toContain("old-policy");
+    expect(window.location.search).not.toContain("new-policy");
+    expect(window.location.search).not.toContain("resource_changes");
+    expect(window.location.search).not.toContain("assume_role_policy");
   });
 });

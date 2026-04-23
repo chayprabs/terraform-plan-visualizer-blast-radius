@@ -1,5 +1,6 @@
 export const siteConfig = {
   name: "Authos",
+  siteUrl: "https://example.com",
   description:
     "Browser-first developer tools built for local, trustworthy workflows.",
   links: {

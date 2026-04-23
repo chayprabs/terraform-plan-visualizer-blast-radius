@@ -8,6 +8,7 @@ import {
   type ReactFlowInstance,
 } from "@xyflow/react";
 import {
+  startTransition,
   useCallback,
   useDeferredValue,
   useEffect,
@@ -54,6 +55,10 @@ import {
   getRiskSeverityLabel,
   RISK_SEVERITY_ORDER,
 } from "@/features/terraform-plan/risk/riskCopy";
+import {
+  DEFAULT_TERRAFORM_PLAN_GRAPH_VIEW_STATE,
+  type TerraformPlanGraphViewState,
+} from "@/features/terraform-plan/state/urlState";
 
 interface PlanGraphViewProps {
   blastRadiusDownstreamIds?: string[];
@@ -61,8 +66,10 @@ interface PlanGraphViewProps {
   blastRadiusNodeIds?: string[];
   blastRadiusUpstreamIds?: string[];
   hasAnalyzed: boolean;
+  initialState?: TerraformPlanGraphViewState;
   normalizedPlan: NormalizedPlan | null;
   onOpenResource?: (address: string, initialTab: ResourceDetailsTabKey) => void;
+  onStateChange?: (state: TerraformPlanGraphViewState) => void;
   selectedAddress?: string | null;
 }
 
@@ -510,11 +517,14 @@ export function PlanGraphView({
   blastRadiusNodeIds = [],
   blastRadiusUpstreamIds = [],
   hasAnalyzed,
+  initialState,
   normalizedPlan,
   onOpenResource,
+  onStateChange,
   selectedAddress = null,
 }: PlanGraphViewProps) {
   const { settings } = usePrivacyRedaction();
+  const resolvedInitialState = initialState ?? DEFAULT_TERRAFORM_PLAN_GRAPH_VIEW_STATE;
   const flowInstanceRef = useRef<ReactFlowInstance<TerraformFlowNode, FlowEdge> | null>(
     null,
   );
@@ -569,22 +579,68 @@ export function PlanGraphView({
   );
   const isLargeGraph = totalResourceCount > LARGE_GRAPH_WARNING_THRESHOLD;
 
-  const [search, setSearch] = useState("");
-  const [action, setAction] = useState<ChangeActionKind | "all">("all");
-  const [provider, setProvider] = useState<string | "all">("all");
-  const [module, setModule] = useState<string | "all">("all");
-  const [resourceGroup, setResourceGroup] = useState<ResourceTypeGroup | "all">(
-    "all",
+  const [search, setSearch] = useState(resolvedInitialState.search);
+  const [action, setAction] = useState<ChangeActionKind | "all">(
+    resolvedInitialState.action,
   );
-  const [risk, setRisk] = useState<GraphRiskFilter>("all");
-  const [showChangedOnly, setShowChangedOnly] = useState(isLargeGraph);
+  const [provider, setProvider] = useState<string | "all">(
+    resolvedInitialState.provider,
+  );
+  const [module, setModule] = useState<string | "all">(resolvedInitialState.module);
+  const [resourceGroup, setResourceGroup] = useState<ResourceTypeGroup | "all">(
+    resolvedInitialState.resourceGroup,
+  );
+  const [risk, setRisk] = useState<GraphRiskFilter>(resolvedInitialState.risk);
+  const [showChangedOnly, setShowChangedOnly] = useState(
+    initialState?.showChangedOnly ?? isLargeGraph,
+  );
   const [includeChangedDependencies, setIncludeChangedDependencies] =
-    useState(isLargeGraph);
+    useState(initialState?.includeChangedDependencies ?? isLargeGraph);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(
     selectedAddress,
   );
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const deferredSearch = useDeferredValue(search);
+
+  useEffect(() => {
+    const nextState = initialState ?? DEFAULT_TERRAFORM_PLAN_GRAPH_VIEW_STATE;
+
+    startTransition(() => {
+      setSearch(nextState.search);
+      setAction(nextState.action);
+      setProvider(nextState.provider);
+      setModule(nextState.module);
+      setResourceGroup(nextState.resourceGroup);
+      setRisk(nextState.risk);
+      setShowChangedOnly(initialState?.showChangedOnly ?? isLargeGraph);
+      setIncludeChangedDependencies(
+        initialState?.includeChangedDependencies ?? isLargeGraph,
+      );
+    });
+  }, [initialState, isLargeGraph]);
+
+  useEffect(() => {
+    onStateChange?.({
+      action,
+      includeChangedDependencies,
+      module,
+      provider,
+      resourceGroup,
+      risk,
+      search,
+      showChangedOnly,
+    });
+  }, [
+    action,
+    includeChangedDependencies,
+    module,
+    onStateChange,
+    provider,
+    resourceGroup,
+    risk,
+    search,
+    showChangedOnly,
+  ]);
 
   useEffect(() => {
     const nextSelectedNodeId =

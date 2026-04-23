@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { usePrivacyRedaction } from "@/features/terraform-plan/components/privacy/PrivacyRedactionContext";
 import type { ChangeActionKind } from "@/features/terraform-plan/domain/actionTypes";
 import type { NormalizedPlan } from "@/features/terraform-plan/domain/normalizedPlanTypes";
@@ -12,7 +12,6 @@ import {
   buildResourceFilterOptions,
   buildResourceSummaryLabel,
   buildResourceTableItems,
-  DEFAULT_RESOURCE_TABLE_SORT,
   filterAndSortResourceTableItems,
   formatResourceListCopy,
   MANY_RESOURCE_CHANGES_THRESHOLD,
@@ -21,13 +20,19 @@ import {
   type ResourceTableSortField,
 } from "@/features/terraform-plan/components/resources/resourceTableModel";
 import { redactText } from "@/features/terraform-plan/privacy/redactTerraformPlan";
+import {
+  DEFAULT_TERRAFORM_PLAN_RESOURCE_TABLE_VIEW_STATE,
+  type TerraformPlanResourceTableViewState,
+} from "@/features/terraform-plan/state/urlState";
 
 interface ResourceChangesTableProps {
   blastRadiusAddresses?: ReadonlySet<string> | null;
   blastRadiusFocusAddress?: string | null;
   hasAnalyzed: boolean;
+  initialState?: TerraformPlanResourceTableViewState;
   normalizedPlan: NormalizedPlan | null;
   onOpenResource?: (address: string) => void;
+  onStateChange?: (state: TerraformPlanResourceTableViewState) => void;
   selectedAddress?: string | null;
 }
 
@@ -82,26 +87,37 @@ export function ResourceChangesTable({
   blastRadiusAddresses = null,
   blastRadiusFocusAddress = null,
   hasAnalyzed,
+  initialState,
   normalizedPlan,
   onOpenResource,
+  onStateChange,
   selectedAddress = null,
 }: ResourceChangesTableProps) {
   const { settings } = usePrivacyRedaction();
-  const [search, setSearch] = useState("");
-  const [action, setAction] = useState<ChangeActionKind | "all">("all");
-  const [provider, setProvider] = useState<string | "all">("all");
-  const [module, setModule] = useState<string | "all">("all");
+  const resolvedInitialState =
+    initialState ?? DEFAULT_TERRAFORM_PLAN_RESOURCE_TABLE_VIEW_STATE;
+  const [search, setSearch] = useState(resolvedInitialState.search);
+  const [action, setAction] = useState<ChangeActionKind | "all">(
+    resolvedInitialState.action,
+  );
+  const [provider, setProvider] = useState<string | "all">(
+    resolvedInitialState.provider,
+  );
+  const [module, setModule] = useState<string | "all">(resolvedInitialState.module);
   const [resourceGroup, setResourceGroup] = useState<ResourceTypeGroup | "all">(
-    "all",
+    resolvedInitialState.resourceGroup,
   );
-  const [severity, setSeverity] = useState<ResourceSeverityValue | "all">("all");
+  const [severity, setSeverity] = useState<ResourceSeverityValue | "all">(
+    resolvedInitialState.severity,
+  );
   const [inSelectedBlastRadiusOnly, setInSelectedBlastRadiusOnly] =
-    useState(false);
-  const [includeNoOp, setIncludeNoOp] = useState(() =>
-    normalizedPlan ? shouldIncludeNoOpByDefault(normalizedPlan) : true,
-  );
+    useState(resolvedInitialState.inSelectedBlastRadiusOnly);
+  const defaultIncludeNoOp =
+    initialState?.includeNoOp ??
+    (normalizedPlan ? shouldIncludeNoOpByDefault(normalizedPlan) : true);
+  const [includeNoOp, setIncludeNoOp] = useState(defaultIncludeNoOp);
   const [sortBy, setSortBy] = useState<ResourceTableSortField>(
-    DEFAULT_RESOURCE_TABLE_SORT,
+    resolvedInitialState.sortBy,
   );
   const [copyState, setCopyState] = useState<CopyState>({
     copiedAddress: null,
@@ -116,6 +132,14 @@ export function ResourceChangesTable({
     () => buildResourceTableItems(normalizedPlan?.resourceChanges ?? []),
     [normalizedPlan],
   );
+  const showCostColumn = tableItems.some(
+    (item) => item.costMonthlyDelta !== null && item.costCurrency !== null,
+  );
+  const planResetKey = [
+    normalizedPlan?.timestamp ?? "",
+    normalizedPlan?.resourceChanges.length ?? 0,
+    normalizedPlan?.summary.noOpCount ?? 0,
+  ].join(":");
   const filterOptions = useMemo(
     () => buildResourceFilterOptions(tableItems),
     [tableItems],
@@ -160,6 +184,23 @@ export function ResourceChangesTable({
   );
 
   useEffect(() => {
+    const nextState =
+      initialState ?? DEFAULT_TERRAFORM_PLAN_RESOURCE_TABLE_VIEW_STATE;
+
+    startTransition(() => {
+      setSearch(nextState.search);
+      setAction(nextState.action);
+      setProvider(nextState.provider);
+      setModule(nextState.module);
+      setResourceGroup(nextState.resourceGroup);
+      setSeverity(nextState.severity);
+      setInSelectedBlastRadiusOnly(nextState.inSelectedBlastRadiusOnly);
+      setIncludeNoOp(defaultIncludeNoOp);
+      setSortBy(nextState.sortBy);
+    });
+  }, [defaultIncludeNoOp, initialState, planResetKey]);
+
+  useEffect(() => {
     if (copyState.copiedAddress === null && copyState.errorAddress === null) {
       return;
     }
@@ -189,6 +230,31 @@ export function ResourceChangesTable({
 
     return () => window.clearTimeout(timeoutId);
   }, [copyState.filteredListState]);
+
+  useEffect(() => {
+    onStateChange?.({
+      action,
+      inSelectedBlastRadiusOnly,
+      includeNoOp,
+      module,
+      provider,
+      resourceGroup,
+      search,
+      severity,
+      sortBy,
+    });
+  }, [
+    action,
+    inSelectedBlastRadiusOnly,
+    includeNoOp,
+    module,
+    onStateChange,
+    provider,
+    resourceGroup,
+    search,
+    severity,
+    sortBy,
+  ]);
 
   if (!hasAnalyzed || !normalizedPlan) {
     return (
@@ -320,6 +386,14 @@ export function ResourceChangesTable({
                   <th className="text-foreground px-3 py-3 text-xs font-semibold tracking-[0.14em] uppercase">
                     Resource group
                   </th>
+                  {showCostColumn ? (
+                    <th
+                      className="text-foreground px-3 py-3 text-xs font-semibold tracking-[0.14em] uppercase"
+                      title="Estimated monthly cost delta from imported or manual cost data."
+                    >
+                      Cost delta
+                    </th>
+                  ) : null}
                   <th
                     className="text-foreground px-3 py-3 text-xs font-semibold tracking-[0.14em] uppercase"
                     title="Count of replace_paths entries reported by Terraform."
@@ -359,6 +433,7 @@ export function ResourceChangesTable({
                     onOpenDetails={() => {
                       onOpenResource?.(item.address);
                     }}
+                    showCostColumn={showCostColumn}
                   />
                 ))}
               </tbody>

@@ -25,6 +25,10 @@ export interface ResourceTableItem {
   action: ChangeActionKind;
   address: string;
   changedAttributesCount: number | null;
+  costCurrency: string | null;
+  costMonthlyAfter: number | null;
+  costMonthlyBefore: number | null;
+  costMonthlyDelta: number | null;
   hasSensitiveChange: boolean;
   moduleKey: string;
   moduleLabel: string;
@@ -246,6 +250,10 @@ export function buildResourceTableItems(
       action: resource.action,
       address: resource.address,
       changedAttributesCount: getChangedAttributesCount(resource),
+      costCurrency: resource.costEstimate?.currency ?? null,
+      costMonthlyAfter: resource.costEstimate?.monthlyCostAfter ?? null,
+      costMonthlyBefore: resource.costEstimate?.monthlyCostBefore ?? null,
+      costMonthlyDelta: resource.costEstimate?.monthlyDelta ?? null,
       hasSensitiveChange:
         hasSensitiveValue(resource.beforeSensitive) ||
         hasSensitiveValue(resource.afterSensitive),

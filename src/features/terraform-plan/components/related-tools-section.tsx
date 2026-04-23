@@ -7,7 +7,7 @@ export function RelatedToolsSection() {
       <SectionHeading
         eyebrow="Related tools"
         title="Next infrastructure review surfaces"
-        description="These placeholder links stay disabled for now so the page can preview the wider Authos toolset without promising unfinished routes."
+        description="These tools are planned follow-ons for adjacent review workflows. They are marked clearly as coming soon until live routes exist."
       />
 
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
@@ -24,7 +24,7 @@ export function RelatedToolsSection() {
                 {tool.title}
               </h3>
               <span className="text-muted-foreground text-xs font-medium tracking-[0.18em] uppercase">
-                Disabled
+                {tool.status}
               </span>
             </div>
             <p className="text-muted-foreground mt-3 text-sm leading-7">

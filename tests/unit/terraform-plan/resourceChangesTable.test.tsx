@@ -1,5 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { applyCostImpactToPlan } from "@/features/terraform-plan/cost/applyCostImpact";
+import { DEFAULT_COST_IMPACT_STATE } from "@/features/terraform-plan/cost/costTypes";
 import { normalizeTerraformPlan } from "@/features/terraform-plan/domain/normalizeTerraformPlan";
 import type { TerraformPlan } from "@/features/terraform-plan/domain/terraformPlanTypes";
 import { ResourceChangesTable } from "@/features/terraform-plan/components/resources/ResourceChangesTable";
@@ -212,5 +214,28 @@ describe("ResourceChangesTable", () => {
     expect(
       screen.queryByText(/module\.identity\.aws_iam_role\.worker/i),
     ).not.toBeInTheDocument();
+  });
+
+  it("shows a cost delta column when mapped cost data exists", () => {
+    render(
+      <ResourceChangesTable
+        hasAnalyzed
+        normalizedPlan={applyCostImpactToPlan(normalizeTerraformPlan(tinyPlan), {
+          ...DEFAULT_COST_IMPACT_STATE,
+          manualEntries: [
+            {
+              currency: "USD",
+              id: "bucket-assets",
+              monthlyDelta: 125,
+              resourceAddress: "aws_s3_bucket.assets",
+              resourceName: "aws_s3_bucket.assets",
+            },
+          ],
+        })}
+      />,
+    );
+
+    expect(screen.getByText(/Cost delta/i)).toBeInTheDocument();
+    expect(screen.getByText(/\+\$125\.00\/mo/i)).toBeInTheDocument();
   });
 });

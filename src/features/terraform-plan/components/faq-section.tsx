@@ -7,7 +7,7 @@ export function FaqSection() {
       <SectionHeading
         eyebrow="FAQ"
         title="Common questions from Terraform reviewers"
-        description="Quick answers about local parsing, supported input, and what the current analyzer surfaces."
+        description="Quick answers about supported plan input, local browser processing, destructive-change detection, and why some dependency edges stay out of view."
       />
 
       <div className="mt-6 space-y-3">

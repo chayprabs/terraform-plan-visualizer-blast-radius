@@ -1,5 +1,10 @@
 import type { ChangeActionKind } from "@/features/terraform-plan/domain/actionTypes";
 import type {
+  CostThresholds,
+  PlanCostEstimate,
+  ResourceCostEstimate,
+} from "@/features/terraform-plan/cost/costTypes";
+import type {
   TerraformImporting,
   TerraformOutputChange,
   TerraformPlan,
@@ -75,6 +80,8 @@ export interface NormalizedResourceChange {
   generatedConfig?: string | null;
   isDestructive: boolean;
   isHighRisk: boolean;
+  costEstimate?: ResourceCostEstimate | null;
+  costThresholds?: CostThresholds;
   riskSummary?: ResourceRiskSummary;
   raw: TerraformResourceChange;
 }
@@ -102,6 +109,7 @@ export interface NormalizedPlan {
   providers: ProviderSummary[];
   modules: ModuleSummary[];
   resourceTypeGroups: ResourceTypeGroupSummary[];
+  costEstimate?: PlanCostEstimate | null;
   riskReport?: PlanRiskReport;
   raw: TerraformPlan;
 }

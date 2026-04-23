@@ -8,6 +8,9 @@ import {
   useMemo,
   useState,
 } from "react";
+import { CiHelperPanel } from "@/features/terraform-plan/components/ci/CiHelperPanel";
+import { CostImpactPanel } from "@/features/terraform-plan/components/cost/CostImpactPanel";
+import { LocalHistoryPanel } from "@/features/terraform-plan/components/history/LocalHistoryPanel";
 import {
   riskyPlan,
   tinyPlan,
@@ -32,6 +35,13 @@ import type {
 import type { TerraformPlanSampleKey } from "@/features/terraform-plan/hooks/useTerraformPlanAnalyzer";
 import { useTerraformPlanAnalyzer } from "@/features/terraform-plan/hooks/useTerraformPlanAnalyzer";
 import {
+  applyCostImpactToPlan,
+} from "@/features/terraform-plan/cost/applyCostImpact";
+import {
+  DEFAULT_COST_IMPACT_STATE,
+  type CostImpactState,
+} from "@/features/terraform-plan/cost/costTypes";
+import {
   DEFAULT_MAX_TERRAFORM_PLAN_INPUT_BYTES,
   type AnalysisError,
 } from "@/features/terraform-plan/worker/workerMessages";
@@ -39,6 +49,22 @@ import {
   DEFAULT_TERRAFORM_PLAN_REDACTION_SETTINGS,
   type TerraformPlanRedactionSettings,
 } from "@/features/terraform-plan/privacy/redactionTypes";
+import {
+  applyThemePreference,
+  loadLocalPreferences,
+  saveLocalPreferences,
+  type ThemePreference,
+} from "@/features/terraform-plan/state/localPreferences";
+import {
+  DEFAULT_TERRAFORM_PLAN_FINDINGS_VIEW_STATE,
+  DEFAULT_TERRAFORM_PLAN_GRAPH_VIEW_STATE,
+  DEFAULT_TERRAFORM_PLAN_RESOURCE_TABLE_VIEW_STATE,
+  parseTerraformPlanUrlState,
+  replaceWindowTerraformPlanUrlState,
+  type TerraformPlanFindingsViewState,
+  type TerraformPlanGraphViewState,
+  type TerraformPlanResourceTableViewState,
+} from "@/features/terraform-plan/state/urlState";
 import { cn } from "@/lib/utils";
 
 const samplePlanMap = {
@@ -157,6 +183,19 @@ export function WorkspaceShell() {
     useState<TerraformPlanRedactionSettings>(
       DEFAULT_TERRAFORM_PLAN_REDACTION_SETTINGS,
     );
+  const [rememberHistory, setRememberHistory] = useState(false);
+  const [theme, setTheme] = useState<ThemePreference>("system");
+  const [workspaceHelperTab, setWorkspaceHelperTab] = useState<"ci">("ci");
+  const [costImpactState, setCostImpactState] = useState<CostImpactState>(
+    DEFAULT_COST_IMPACT_STATE,
+  );
+  const [findingsViewState, setFindingsViewState] =
+    useState<TerraformPlanFindingsViewState | null>(null);
+  const [resourceTableViewState, setResourceTableViewState] =
+    useState<TerraformPlanResourceTableViewState | null>(null);
+  const [graphViewState, setGraphViewState] =
+    useState<TerraformPlanGraphViewState | null>(null);
+  const [hasHydratedSavedState, setHasHydratedSavedState] = useState(false);
   const [blastRadiusFocusAddress, setBlastRadiusFocusAddress] =
     useState<string | null>(null);
   const [selectedResource, setSelectedResource] =
@@ -166,7 +205,27 @@ export function WorkspaceShell() {
 
   const isBusy = status === "parsing" || status === "analyzing";
   const canAnalyze = draftText.trim().length > 0 && localInputError === null;
-  const analyzedPlan = status === "success" ? normalizedPlan : null;
+  const baseAnalyzedPlan = status === "success" ? normalizedPlan : null;
+  const analyzedPlan = useMemo(
+    () =>
+      baseAnalyzedPlan
+        ? applyCostImpactToPlan(baseAnalyzedPlan, costImpactState)
+        : null,
+    [baseAnalyzedPlan, costImpactState],
+  );
+  const analyzedPlanSignature = useMemo(
+    () =>
+      baseAnalyzedPlan
+        ? [
+            analyzedSourceName ?? "plan",
+            baseAnalyzedPlan.timestamp ?? "",
+            baseAnalyzedPlan.resourceChanges.length,
+            baseAnalyzedPlan.outputChanges.length,
+            baseAnalyzedPlan.summary.noOpCount,
+          ].join(":")
+        : "terraform-plan-idle",
+    [analyzedSourceName, baseAnalyzedPlan],
+  );
   const effectiveBlastRadiusFocusAddress = useMemo(
     () =>
       analyzedPlan?.resourceChanges.some(
@@ -221,6 +280,112 @@ export function WorkspaceShell() {
     return () => window.clearTimeout(timeoutId);
   }, [copyState]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const savedPreferences = loadLocalPreferences();
+    const parsedUrlState = parseTerraformPlanUrlState(window.location.search);
+
+    startTransition(() => {
+      setActiveTab(
+        searchParams.has("it") ? parsedUrlState.state.inputTab : "paste",
+      );
+      setRememberHistory(savedPreferences.rememberHistory);
+      setTheme(savedPreferences.theme);
+      applyThemePreference(savedPreferences.theme);
+      setPrivacySettings(
+        parsedUrlState.hasRedactionSettings
+          ? parsedUrlState.state.redactionSettings
+          : savedPreferences.redactionSettings,
+      );
+      setBlastRadiusFocusAddress(
+        searchParams.has("br")
+          ? parsedUrlState.state.blastRadiusFocusAddress
+          : null,
+      );
+      setSelectedResource(
+        searchParams.has("sr") && parsedUrlState.state.selectedResourceAddress
+          ? {
+              address: parsedUrlState.state.selectedResourceAddress,
+              initialTab: parsedUrlState.state.resourceDetailsTab,
+            }
+          : null,
+      );
+      setFindingsViewState(
+        ["fa", "fc", "fg", "fh", "fs", "fv"].some((key) =>
+          searchParams.has(key),
+        )
+          ? parsedUrlState.state.findings
+          : null,
+      );
+      setResourceTableViewState(
+        ["ra", "rbr", "rgrp", "rm", "rno", "rp", "rs", "rsev", "rso"].some(
+          (key) => searchParams.has(key),
+        )
+          ? parsedUrlState.state.resources
+          : null,
+      );
+      setGraphViewState(
+        ["ga", "gco", "gdep", "gm", "gp", "ggrp", "gr", "gs"].some((key) =>
+          searchParams.has(key),
+        )
+          ? parsedUrlState.state.graph
+          : null,
+      );
+      setHasHydratedSavedState(true);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!hasHydratedSavedState) {
+      return;
+    }
+
+    applyThemePreference(theme);
+    saveLocalPreferences({
+      redactionSettings: privacySettings,
+      rememberHistory,
+      theme,
+    });
+  }, [
+    hasHydratedSavedState,
+    privacySettings,
+    rememberHistory,
+    theme,
+  ]);
+
+  useEffect(() => {
+    if (!hasHydratedSavedState) {
+      return;
+    }
+
+    replaceWindowTerraformPlanUrlState({
+      blastRadiusFocusAddress,
+      findings:
+        findingsViewState ?? DEFAULT_TERRAFORM_PLAN_FINDINGS_VIEW_STATE,
+      graph: graphViewState ?? DEFAULT_TERRAFORM_PLAN_GRAPH_VIEW_STATE,
+      inputTab: activeTab,
+      redactionSettings: privacySettings,
+      resourceDetailsTab: selectedResource?.initialTab ?? "overview",
+      resources:
+        resourceTableViewState ??
+        DEFAULT_TERRAFORM_PLAN_RESOURCE_TABLE_VIEW_STATE,
+      selectedResourceAddress: selectedResource?.address ?? null,
+    });
+  }, [
+    activeTab,
+    blastRadiusFocusAddress,
+    findingsViewState,
+    graphViewState,
+    hasHydratedSavedState,
+    privacySettings,
+    resourceTableViewState,
+    selectedResource,
+  ]);
+
   const handlePasteChange = useCallback(
     (nextValue: string) => {
       setDraftText(nextValue);
@@ -238,6 +403,7 @@ export function WorkspaceShell() {
     setActiveTab("paste");
     setAutoAnalyze(false);
     setCopyState("idle");
+    setCostImpactState(DEFAULT_COST_IMPACT_STATE);
     setDraftText("");
     setBlastRadiusFocusAddress(null);
     setLocalInputError(null);
@@ -288,6 +454,7 @@ export function WorkspaceShell() {
       startTransition(() => {
         setActiveTab("paste");
         setAutoAnalyze(true);
+        setCostImpactState(DEFAULT_COST_IMPACT_STATE);
         setDraftText(nextText);
         setBlastRadiusFocusAddress(null);
         setLocalInputError(null);
@@ -467,7 +634,7 @@ export function WorkspaceShell() {
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
-        <div>
+        <div className="space-y-6">
           <PlanInputPanel
             activeTab={activeTab}
             autoAnalyze={autoAnalyze}
@@ -485,6 +652,12 @@ export function WorkspaceShell() {
             onTabChange={setActiveTab}
             onTextChange={handlePasteChange}
             value={draftText}
+          />
+
+          <CostImpactPanel
+            normalizedPlan={baseAnalyzedPlan}
+            onChange={setCostImpactState}
+            value={costImpactState}
           />
         </div>
 
@@ -589,22 +762,20 @@ export function WorkspaceShell() {
 
                   <RiskFindingsPanel
                     key={
-                      analyzedPlan
-                        ? `${analyzedSourceName ?? "plan"}:${analyzedPlan.timestamp ?? ""}:${analyzedPlan.resourceChanges.length}:${analyzedPlan.outputChanges.length}:${analyzedPlan.riskReport?.score ?? 0}:${analyzedPlan.riskReport?.findings.length ?? 0}`
-                        : "risk-findings-idle"
+                      analyzedPlan ? `${analyzedPlanSignature}:risk-findings` : "risk-findings-idle"
                     }
                     hasAnalyzed={status === "success"}
+                    initialState={findingsViewState ?? undefined}
                     normalizedPlan={analyzedPlan}
                     onOpenResource={(address) => {
                       handleOpenResource(address, "findings");
                     }}
+                    onStateChange={setFindingsViewState}
                   />
 
                   <PlanGraphView
                     key={
-                      analyzedPlan
-                        ? `${analyzedSourceName ?? "plan"}:${analyzedPlan.timestamp ?? ""}:${analyzedPlan.resourceChanges.length}:${analyzedPlan.summary.noOpCount}:${analyzedPlan.riskReport?.score ?? 0}:graph`
-                        : "plan-graph-idle"
+                      analyzedPlan ? `${analyzedPlanSignature}:graph` : "plan-graph-idle"
                     }
                     blastRadiusDownstreamIds={blastRadiusAnalysis?.downstream.map(
                       (node) => node.id,
@@ -615,8 +786,10 @@ export function WorkspaceShell() {
                       (node) => node.id,
                     )}
                     hasAnalyzed={status === "success"}
+                    initialState={graphViewState ?? undefined}
                     normalizedPlan={analyzedPlan}
                     onOpenResource={handleOpenResource}
+                    onStateChange={setGraphViewState}
                     selectedAddress={selectedResource?.address ?? null}
                   />
 
@@ -629,7 +802,7 @@ export function WorkspaceShell() {
                   <ResourceChangesTable
                     key={
                       analyzedPlan
-                        ? `${analyzedSourceName ?? "plan"}:${analyzedPlan.timestamp ?? ""}:${analyzedPlan.resourceChanges.length}:${analyzedPlan.summary.noOpCount}:${analyzedPlan.riskReport?.score ?? 0}`
+                        ? `${analyzedPlanSignature}:resource-table`
                         : "resource-table-idle"
                     }
                     blastRadiusAddresses={
@@ -639,18 +812,42 @@ export function WorkspaceShell() {
                     }
                     blastRadiusFocusAddress={blastRadiusAnalysis?.focusAddress ?? null}
                     hasAnalyzed={status === "success"}
+                    initialState={resourceTableViewState ?? undefined}
                     normalizedPlan={analyzedPlan}
                     onOpenResource={(address) => {
                       handleOpenResource(address, "overview");
                     }}
+                    onStateChange={setResourceTableViewState}
                     selectedAddress={selectedResource?.address ?? null}
+                  />
+
+                  <LocalHistoryPanel
+                    hasAnalyzed={status === "success"}
+                    normalizedPlan={baseAnalyzedPlan}
+                    onRememberHistoryChange={setRememberHistory}
+                    onThemeChange={setTheme}
+                    rememberHistory={rememberHistory}
+                    redactionSettings={privacySettings}
+                    sourceName={analyzedSourceName}
+                    theme={theme}
                   />
 
                   {selectedResourceChange ? (
                     <ResourceDetailsDrawer
                       key={`${selectedResource?.address ?? "resource"}:${selectedResource?.initialTab ?? "overview"}`}
+                      activeTab={selectedResource?.initialTab ?? "overview"}
                       initialTab={selectedResource?.initialTab ?? "overview"}
                       onClose={() => setSelectedResource(null)}
+                      onActiveTabChange={(tab) => {
+                        setSelectedResource((current) =>
+                          current
+                            ? {
+                                ...current,
+                                initialTab: tab,
+                              }
+                            : current,
+                        );
+                      }}
                       resourceChange={selectedResourceChange}
                     />
                   ) : null}
@@ -669,6 +866,40 @@ export function WorkspaceShell() {
               </div>
             ) : null}
           </div>
+        </div>
+      </div>
+
+      <div className="border-border mt-8 border-t pt-6">
+        <div
+          className="flex flex-wrap gap-2"
+          role="tablist"
+          aria-label="Workspace helper tabs"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-controls="workspace-helper-panel-ci"
+            aria-selected={workspaceHelperTab === "ci"}
+            className={cn(
+              "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              workspaceHelperTab === "ci"
+                ? "bg-brand text-brand-foreground"
+                : "bg-background text-muted-foreground hover:bg-surface-muted",
+            )}
+            id="workspace-helper-tab-ci"
+            onClick={() => setWorkspaceHelperTab("ci")}
+          >
+            CI
+          </button>
+        </div>
+
+        <div
+          id="workspace-helper-panel-ci"
+          role="tabpanel"
+          aria-labelledby="workspace-helper-tab-ci"
+          className="mt-4"
+        >
+          <CiHelperPanel />
         </div>
       </div>
     </section>

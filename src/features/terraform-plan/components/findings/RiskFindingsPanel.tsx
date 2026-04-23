@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useEffect, useState } from "react";
+import { startTransition, useDeferredValue, useEffect, useState } from "react";
 import { ExportTrustNote } from "@/features/terraform-plan/components/privacy/ExportTrustNote";
 import { usePrivacyRedaction } from "@/features/terraform-plan/components/privacy/PrivacyRedactionContext";
 import type { NormalizedPlan } from "@/features/terraform-plan/domain/normalizedPlanTypes";
@@ -34,12 +34,18 @@ import {
 } from "@/features/terraform-plan/components/findings/FindingFilters";
 import { FindingCard } from "@/features/terraform-plan/components/findings/FindingCard";
 import { SeverityBadge } from "@/features/terraform-plan/components/findings/SeverityBadge";
+import {
+  DEFAULT_TERRAFORM_PLAN_FINDINGS_VIEW_STATE,
+  type TerraformPlanFindingsViewState,
+} from "@/features/terraform-plan/state/urlState";
 import { cn } from "@/lib/utils";
 
 interface RiskFindingsPanelProps {
   hasAnalyzed: boolean;
+  initialState?: TerraformPlanFindingsViewState;
   normalizedPlan: NormalizedPlan | null;
   onOpenResource?: (resourceAddress: string) => void;
+  onStateChange?: (state: TerraformPlanFindingsViewState) => void;
 }
 
 interface FindingGroup {
@@ -209,16 +215,24 @@ function buildResourceGroups(findings: RiskFinding[]): FindingGroup[] {
 
 export function RiskFindingsPanel({
   hasAnalyzed,
+  initialState = DEFAULT_TERRAFORM_PLAN_FINDINGS_VIEW_STATE,
   normalizedPlan,
   onOpenResource,
+  onStateChange,
 }: RiskFindingsPanelProps) {
   const { settings } = usePrivacyRedaction();
-  const [severity, setSeverity] = useState<RiskSeverity | "all">("all");
-  const [category, setCategory] = useState<RiskCategory | "all">("all");
-  const [actionKind, setActionKind] = useState<RiskActionKind | "all">("all");
-  const [search, setSearch] = useState("");
-  const [highRiskOnly, setHighRiskOnly] = useState(false);
-  const [groupBy, setGroupBy] = useState<FindingGroupMode>("severity");
+  const [severity, setSeverity] = useState<RiskSeverity | "all">(
+    initialState.severity,
+  );
+  const [category, setCategory] = useState<RiskCategory | "all">(
+    initialState.category,
+  );
+  const [actionKind, setActionKind] = useState<RiskActionKind | "all">(
+    initialState.actionKind,
+  );
+  const [search, setSearch] = useState(initialState.search);
+  const [highRiskOnly, setHighRiskOnly] = useState(initialState.highRiskOnly);
+  const [groupBy, setGroupBy] = useState<FindingGroupMode>(initialState.groupBy);
   const [copiedFindingId, setCopiedFindingId] = useState<string | null>(null);
   const [failedFindingId, setFailedFindingId] = useState<string | null>(null);
   const [bulkCopyState, setBulkCopyState] = useState<"copied" | "error" | "idle">(
@@ -304,6 +318,17 @@ export function RiskFindingsPanel({
   );
 
   useEffect(() => {
+    startTransition(() => {
+      setSeverity(initialState.severity);
+      setCategory(initialState.category);
+      setActionKind(initialState.actionKind);
+      setSearch(initialState.search);
+      setHighRiskOnly(initialState.highRiskOnly);
+      setGroupBy(initialState.groupBy);
+    });
+  }, [initialState]);
+
+  useEffect(() => {
     if (copiedFindingId === null && failedFindingId === null) {
       return;
     }
@@ -327,6 +352,25 @@ export function RiskFindingsPanel({
 
     return () => window.clearTimeout(timeoutId);
   }, [bulkCopyState]);
+
+  useEffect(() => {
+    onStateChange?.({
+      actionKind,
+      category,
+      groupBy,
+      highRiskOnly,
+      search,
+      severity,
+    });
+  }, [
+    actionKind,
+    category,
+    groupBy,
+    highRiskOnly,
+    onStateChange,
+    search,
+    severity,
+  ]);
 
   if (!hasAnalyzed || !normalizedPlan) {
     return (

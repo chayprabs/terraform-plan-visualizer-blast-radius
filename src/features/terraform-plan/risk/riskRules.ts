@@ -1,4 +1,10 @@
 import { getChangedResources } from "@/features/terraform-plan/domain/planSummary";
+import {
+  formatCostThresholdSummary,
+  formatCurrencyAmount,
+  formatMonthlyDelta,
+  getCostSeverityForDelta,
+} from "@/features/terraform-plan/cost/costUtils";
 import type {
   NormalizedOutputChange,
   NormalizedPlan,
@@ -252,6 +258,14 @@ function createPlanFinding(
     actionKind: "plan",
     tags: [],
   };
+}
+
+function isNearlyEqual(left: number | null, right: number | null): boolean {
+  if (left === null || right === null) {
+    return false;
+  }
+
+  return Math.abs(left - right) < 0.001;
 }
 
 export const RESOURCE_RISK_RULES: ResourceRiskRule[] = [
@@ -550,6 +564,59 @@ export const RESOURCE_RISK_RULES: ResourceRiskRule[] = [
           ]
         : [],
   },
+  {
+    id: "resource-cost-increase",
+    evaluate: (change) => {
+      const costEstimate = change.costEstimate;
+      const thresholds = change.costThresholds;
+
+      if (!costEstimate || !thresholds) {
+        return [];
+      }
+
+      const severity = getCostSeverityForDelta(
+        costEstimate.monthlyDelta,
+        thresholds,
+      );
+
+      if (!severity) {
+        return [];
+      }
+
+      return [
+        createResourceFinding("resource-cost-increase", change, {
+          severity,
+          category: "cost",
+          title: "Resource monthly cost increase exceeds threshold",
+          explanation:
+            "This resource's estimated monthly cost delta exceeds the configured review threshold.",
+          evidence: [
+            `Estimated monthly delta: ${formatMonthlyDelta(
+              costEstimate.monthlyDelta,
+              costEstimate.currency,
+            )}.`,
+            costEstimate.monthlyCostBefore !== null &&
+            costEstimate.monthlyCostAfter !== null
+              ? `Estimated monthly cost: ${formatCurrencyAmount(
+                  costEstimate.monthlyCostBefore,
+                  costEstimate.currency,
+                )} -> ${formatCurrencyAmount(
+                  costEstimate.monthlyCostAfter,
+                  costEstimate.currency,
+                )}.`
+              : "Before and after monthly costs were not both provided.",
+            `Thresholds: ${formatCostThresholdSummary(
+              thresholds,
+              costEstimate.currency,
+            )}.`,
+          ],
+          suggestion:
+            "Confirm the spend increase is expected, budgeted, and acceptable before approving this change.",
+          confidence: costEstimate.source === "manual" ? 0.72 : 0.9,
+        }),
+      ];
+    },
+  },
 ];
 
 export const PLAN_RISK_RULES: PlanRiskRule[] = [
@@ -694,6 +761,71 @@ export const PLAN_RISK_RULES: PlanRiskRule[] = [
       }
 
       return findings;
+    },
+  },
+  {
+    id: "plan-cost-increase",
+    evaluate: (normalizedPlan) => {
+      const costEstimate = normalizedPlan.costEstimate;
+
+      if (!costEstimate) {
+        return [];
+      }
+
+      const severity = getCostSeverityForDelta(
+        costEstimate.totalMonthlyDelta,
+        costEstimate.thresholds,
+      );
+
+      if (!severity) {
+        return [];
+      }
+
+      if (
+        costEstimate.resourceEntries.length === 1 &&
+        isNearlyEqual(
+          costEstimate.resourceEntries[0]?.monthlyDelta ?? null,
+          costEstimate.totalMonthlyDelta,
+        )
+      ) {
+        return [];
+      }
+
+      return [
+        createPlanFinding("plan-cost-increase", {
+          severity,
+          category: "cost",
+          title: "Estimated monthly cost increase exceeds threshold",
+          explanation:
+            "The overall estimated monthly cost delta exceeds the configured review threshold for this analysis.",
+          resourceAddress: undefined,
+          resourceType: undefined,
+          evidence: [
+            `Estimated monthly delta: ${formatMonthlyDelta(
+              costEstimate.totalMonthlyDelta,
+              costEstimate.currency,
+            )}.`,
+            costEstimate.totalMonthlyCostBefore !== null &&
+            costEstimate.totalMonthlyCostAfter !== null
+              ? `Estimated monthly cost: ${formatCurrencyAmount(
+                  costEstimate.totalMonthlyCostBefore,
+                  costEstimate.currency,
+                )} -> ${formatCurrencyAmount(
+                  costEstimate.totalMonthlyCostAfter,
+                  costEstimate.currency,
+                )}.`
+              : "Reported total monthly cost before and after values were not both available.",
+            `Thresholds: ${formatCostThresholdSummary(
+              costEstimate.thresholds,
+              costEstimate.currency,
+            )}.`,
+            costEstimate.note ? `Reviewer note: ${costEstimate.note}.` : null,
+          ].filter((entry): entry is string => Boolean(entry)),
+          suggestion:
+            "Review budget impact, owner approval, and rollout timing before applying this spend increase.",
+          confidence: costEstimate.source === "manual" ? 0.72 : 0.9,
+        }),
+      ];
     },
   },
 ];

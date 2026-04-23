@@ -3,6 +3,10 @@ import { getResourceGroupLabel } from "@/features/terraform-plan/components/reso
 import { ResourceActionBadge } from "@/features/terraform-plan/components/resources/ResourceActionBadge";
 import { ResourceAddressCell } from "@/features/terraform-plan/components/resources/ResourceAddressCell";
 import { ResourceRiskBadge } from "@/features/terraform-plan/components/resources/ResourceRiskBadge";
+import {
+  formatCurrencyAmount,
+  formatMonthlyDelta,
+} from "@/features/terraform-plan/cost/costUtils";
 import { cn } from "@/lib/utils";
 
 interface ResourceChangeRowProps {
@@ -11,10 +15,11 @@ interface ResourceChangeRowProps {
   item: ResourceTableItem;
   onCopyAddress: () => void;
   onOpenDetails: () => void;
+  showCostColumn?: boolean;
 }
 
 function formatChangedAttributes(value: number | null): string {
-  return value === null ? "—" : value.toLocaleString();
+  return value === null ? "n/a" : value.toLocaleString();
 }
 
 export function ResourceChangeRow({
@@ -23,6 +28,7 @@ export function ResourceChangeRow({
   item,
   onCopyAddress,
   onOpenDetails,
+  showCostColumn = false,
 }: ResourceChangeRowProps) {
   return (
     <tr
@@ -64,6 +70,26 @@ export function ResourceChangeRow({
       <td className="text-foreground px-3 py-3 text-sm">
         {getResourceGroupLabel(item.resourceGroup)}
       </td>
+      {showCostColumn ? (
+        <td
+          className="text-foreground px-3 py-3 text-sm"
+          title={
+            item.costMonthlyDelta === null || !item.costCurrency
+              ? "No mapped monthly cost estimate."
+              : `Before ${formatCurrencyAmount(
+                  item.costMonthlyBefore,
+                  item.costCurrency,
+                )}. After ${formatCurrencyAmount(
+                  item.costMonthlyAfter,
+                  item.costCurrency,
+                )}.`
+          }
+        >
+          {item.costMonthlyDelta === null || !item.costCurrency
+            ? "n/a"
+            : formatMonthlyDelta(item.costMonthlyDelta, item.costCurrency)}
+        </td>
+      ) : null}
       <td className="text-foreground px-3 py-3 text-sm">
         {item.replacePathsCount.toLocaleString()}
       </td>
