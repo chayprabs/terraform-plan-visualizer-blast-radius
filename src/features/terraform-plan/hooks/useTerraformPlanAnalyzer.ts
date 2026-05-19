@@ -18,6 +18,7 @@ import {
   getTextSizeBytes,
   type TerraformPlanWorkerOutputMessage,
 } from "@/features/terraform-plan/worker/workerMessages";
+import { createAnalysisWorker } from "@/lib/authos/worker/createAnalysisWorker";
 
 const samplePlanMap = {
   riskyPlan,
@@ -27,9 +28,8 @@ const samplePlanMap = {
 export type TerraformPlanSampleKey = keyof typeof samplePlanMap;
 
 function createTerraformPlanWorker(): Worker {
-  return new Worker(
+  return createAnalysisWorker(
     new URL("../worker/terraformPlanWorker.ts", import.meta.url),
-    { type: "module" },
   );
 }
 
@@ -172,15 +172,8 @@ export function useTerraformPlanAnalyzer() {
       };
 
       worker.onerror = () => {
-        dispatch({
-          type: "SET_ERROR",
-          error: {
-            code: "worker-runtime-error",
-            message: "The analysis worker failed before it could finish.",
-            sourceName,
-          },
-        });
         terminateWorker();
+        void runFallbackAnalysis(text, sourceName);
       };
 
       worker.postMessage({

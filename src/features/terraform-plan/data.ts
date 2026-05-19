@@ -1,14 +1,3 @@
-export const workspaceTabs = [
-  {
-    label: "Paste JSON",
-    active: true,
-  },
-  {
-    label: "Upload file",
-    active: false,
-  },
-] as const;
-
 export const summaryCards = [
   {
     title: "Creates",
@@ -80,7 +69,7 @@ export const faqItems = [
   {
     question: "Does my Terraform plan get uploaded?",
     answer:
-      "No. Terraform plan analysis runs in this browser tab, share-safe links only store reviewer state, and exports are redacted by default. Unless you choose to copy or download a report yourself, the plan stays on this device.",
+      "No. Terraform plan analysis runs in this browser tab, share-safe links only store reviewer state, and exports are redacted by default. Optional local history can save a redacted copy of the plan on this device so you can reopen it later—nothing is sent to a server.",
   },
   {
     question: "How do I generate Terraform plan JSON?",
@@ -99,36 +88,7 @@ export const faqItems = [
   },
 ] as const;
 
-export const relatedTools = [
-  {
-    title: "Terraform HCL linter and docs generator",
-    description:
-      "Lint Terraform modules, surface style issues, and generate reviewer-friendly module docs alongside plan analysis.",
-    href: "#",
-    status: "Coming soon",
-  },
-  {
-    title: "Kubernetes manifest analyzer",
-    description:
-      "Inspect Kubernetes YAML for risky updates, missing safeguards, and rollout impact before merge.",
-    href: "#",
-    status: "Coming soon",
-  },
-  {
-    title: "GitHub Actions workflow analyzer",
-    description:
-      "Review workflow permissions, secret handling, and cache or artifact behavior in CI changes.",
-    href: "#",
-    status: "Coming soon",
-  },
-  {
-    title: "Secrets redactor",
-    description:
-      "Strip tokens, credentials, and sensitive values out of infra logs and reports before sharing them.",
-    href: "#",
-    status: "Coming soon",
-  },
-] as const;
+export { authosTools as relatedTools } from "@/lib/authos/tools-registry";
 
 export const analyzerChecks = [
   "Normalizes Terraform resource changes into creates, updates, deletes, and replacements so reviewers can sort by impact instead of scanning raw JSON.",

@@ -135,12 +135,14 @@ export function TerraformGraphNode({
 
   return (
     <div
+      aria-label={`${graphNode.label}, ${graphNode.actionKind} change, ${graphNode.riskLevel} risk`}
       className={cn(
         "border-border bg-surface relative overflow-hidden rounded-[1.15rem] border transition-all duration-150",
         getEmphasisClasses(emphasisState),
       )}
       data-emphasis={emphasisState}
       data-graph-node-id={graphNode.id}
+      role="group"
       style={{
         width: PLAN_GRAPH_NODE_WIDTH,
         minHeight: PLAN_GRAPH_NODE_HEIGHT,

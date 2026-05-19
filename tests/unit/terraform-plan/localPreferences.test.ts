@@ -6,6 +6,7 @@ import {
   clearLocalHistory,
   createLocalHistoryEntry,
   deleteLocalHistoryEntry,
+  getLocalHistoryRestorablePlan,
   listLocalHistoryEntries,
   loadLocalPreferences,
   saveLocalHistoryEntry,
@@ -34,7 +35,7 @@ describe("localPreferences", () => {
     expect(document.documentElement.hasAttribute("data-theme")).toBe(false);
   });
 
-  it("stores only redacted local summaries and supports delete and clear operations", async () => {
+  it("stores redacted summaries, restorable plan JSON, and supports delete and clear operations", async () => {
     const entry = createLocalHistoryEntry(
       normalizeTerraformPlan(riskyPlan),
       "plan-ghp_abcdefghijklmnopqrstuvwxyz123456.json",
@@ -50,9 +51,20 @@ describe("localPreferences", () => {
 
     expect(entry.sourceName).not.toContain("ghp_abcdefghijklmnopqrstuvwxyz123456");
     expect(entry.totalChanges).toBeGreaterThan(0);
+    expect(entry.redactedPlanJson).toBeTruthy();
+    expect(entry.contentSignature).toContain("plan-[redacted]");
 
     await saveLocalHistoryEntry(entry);
-    expect(await listLocalHistoryEntries()).toHaveLength(1);
+
+    const listed = await listLocalHistoryEntries();
+
+    expect(listed).toHaveLength(1);
+    expect(listed[0]?.hasRestorablePlan).toBe(true);
+
+    const restored = await getLocalHistoryRestorablePlan(entry.id);
+
+    expect(restored?.sourceName).toBe(entry.sourceName);
+    expect(restored?.planJson).toContain('"format_version"');
 
     await deleteLocalHistoryEntry(entry.id);
     expect(await listLocalHistoryEntries()).toHaveLength(0);

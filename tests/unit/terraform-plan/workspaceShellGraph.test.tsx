@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ComponentType, ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WorkspaceShell } from "@/features/terraform-plan/components/workspace-shell";
+import { PlanMetricsProvider } from "@/features/terraform-plan/context/planMetricsContext";
 import { normalizeTerraformPlan } from "@/features/terraform-plan/domain/normalizeTerraformPlan";
 import { riskyPlan } from "@/features/terraform-plan/fixtures/samplePlans";
 import { createBlastRadiusPlan } from "./blastRadiusTestPlan";
@@ -11,6 +12,14 @@ const useTerraformPlanAnalyzerMock = vi.hoisted(() => vi.fn());
 vi.mock("@/features/terraform-plan/hooks/useTerraformPlanAnalyzer", () => ({
   useTerraformPlanAnalyzer: useTerraformPlanAnalyzerMock,
 }));
+
+function renderWorkspaceShell() {
+  return render(
+    <PlanMetricsProvider>
+      <WorkspaceShell />
+    </PlanMetricsProvider>,
+  );
+}
 
 vi.mock("@xyflow/react", async () => {
   const React = await import("react");
@@ -118,7 +127,7 @@ describe("WorkspaceShell graph integration", () => {
       warnings: [],
     });
 
-    render(<WorkspaceShell />);
+    renderWorkspaceShell();
 
     fireEvent.click(
       screen.getByTestId("graph-node-module.data.aws_db_instance.primary"),
@@ -144,7 +153,7 @@ describe("WorkspaceShell graph integration", () => {
       warnings: [],
     });
 
-    render(<WorkspaceShell />);
+    renderWorkspaceShell();
 
     fireEvent.click(screen.getByTestId("graph-node-module.app.aws_instance.api"));
 
@@ -193,7 +202,7 @@ describe("WorkspaceShell graph integration", () => {
       "/tools/terraform-plan-visualizer?it=upload&fa=replace&fh=1&fg=resource&fs=aws_db_instance&ra=replace&rs=primary&rso=address&ga=replace&gco=1&gdep=1&gr=critical&sr=module.data.aws_db_instance.primary&rt=findings&br=module.data.aws_db_instance.primary",
     );
 
-    render(<WorkspaceShell />);
+    renderWorkspaceShell();
 
     const dialog = await screen.findByRole("dialog", {
       name: /module\.data\.aws_db_instance\.primary/i,

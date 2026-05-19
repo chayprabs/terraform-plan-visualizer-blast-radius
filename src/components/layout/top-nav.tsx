@@ -1,11 +1,18 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Container } from "@/components/ui/container";
-import { primaryNavigation, siteConfig } from "@/lib/site";
+import { availableAuthosTools } from "@/lib/authos/tools-registry";
+import { siteConfig } from "@/lib/site";
+import { cn } from "@/lib/utils";
 
 export function TopNav() {
+  const pathname = usePathname();
+
   return (
     <header className="border-border bg-background border-b">
-      <Container className="flex items-center justify-between py-4">
+      <Container className="flex flex-col gap-4 py-4 lg:flex-row lg:items-center lg:justify-between">
         <Link
           href={siteConfig.links.home}
           className="text-foreground flex items-center gap-3 text-sm font-semibold tracking-[0.16em] uppercase"
@@ -16,14 +23,29 @@ export function TopNav() {
           <span>Authos</span>
         </Link>
 
-        <nav className="text-muted-foreground flex items-center gap-6 text-sm">
-          {primaryNavigation.map((item) => (
+        <nav
+          className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm"
+          aria-label="Authos tools"
+        >
+          <Link
+            href={siteConfig.links.home}
+            className={cn(
+              "text-muted-foreground hover:text-foreground transition-colors",
+              pathname === siteConfig.links.home && "text-foreground font-medium",
+            )}
+          >
+            Home
+          </Link>
+          {availableAuthosTools.map((tool) => (
             <Link
-              key={item.href}
-              href={item.href}
-              className="hover:text-foreground transition-colors duration-150"
+              key={tool.href}
+              href={tool.href}
+              className={cn(
+                "text-muted-foreground hover:text-foreground transition-colors",
+                pathname === tool.href && "text-foreground font-medium",
+              )}
             >
-              {item.label}
+              {tool.title}
             </Link>
           ))}
         </nav>

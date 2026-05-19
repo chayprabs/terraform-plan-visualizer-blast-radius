@@ -105,6 +105,14 @@ export function ResourceDetailsDrawer({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
+  useEffect(() => {
+    const dialog = document.querySelector<HTMLElement>(
+      `[aria-labelledby="${titleId}"]`,
+    );
+
+    dialog?.focus();
+  }, [titleId]);
+
   const handleCopyAddress = async () => {
     const copied = await copyText(
       redactText(resourceChange.address, {
@@ -128,6 +136,7 @@ export function ResourceDetailsDrawer({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        tabIndex={-1}
         className="border-border bg-background relative flex h-full w-full flex-col border-l shadow-2xl sm:max-w-3xl"
       >
         <ResourceDetailsHeader

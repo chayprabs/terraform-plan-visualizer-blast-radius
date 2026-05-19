@@ -51,6 +51,7 @@ import {
 } from "@/features/terraform-plan/privacy/redactionTypes";
 import {
   applyThemePreference,
+  getLocalHistoryRestorableSession,
   loadLocalPreferences,
   saveLocalPreferences,
   type ThemePreference,
@@ -64,7 +65,9 @@ import {
   type TerraformPlanFindingsViewState,
   type TerraformPlanGraphViewState,
   type TerraformPlanResourceTableViewState,
+  type TerraformPlanUrlState,
 } from "@/features/terraform-plan/state/urlState";
+import { usePlanMetrics } from "@/features/terraform-plan/context/planMetricsContext";
 import { cn } from "@/lib/utils";
 
 const samplePlanMap = {
@@ -160,6 +163,7 @@ function getErrorDescription(error: AnalysisError): string {
 }
 
 export function WorkspaceShell() {
+  const { setMetricsFromPlan } = usePlanMetrics();
   const {
     analyzeText,
     error,
@@ -248,6 +252,30 @@ export function WorkspaceShell() {
         ? buildBlastRadiusAnalysis(analyzedPlan, effectiveBlastRadiusFocusAddress)
         : null,
     [analyzedPlan, effectiveBlastRadiusFocusAddress],
+  );
+  const currentUrlState = useMemo<TerraformPlanUrlState>(
+    () => ({
+      blastRadiusFocusAddress,
+      findings:
+        findingsViewState ?? DEFAULT_TERRAFORM_PLAN_FINDINGS_VIEW_STATE,
+      graph: graphViewState ?? DEFAULT_TERRAFORM_PLAN_GRAPH_VIEW_STATE,
+      inputTab: activeTab,
+      redactionSettings: privacySettings,
+      resourceDetailsTab: selectedResource?.initialTab ?? "overview",
+      resources:
+        resourceTableViewState ??
+        DEFAULT_TERRAFORM_PLAN_RESOURCE_TABLE_VIEW_STATE,
+      selectedResourceAddress: selectedResource?.address ?? null,
+    }),
+    [
+      activeTab,
+      blastRadiusFocusAddress,
+      findingsViewState,
+      graphViewState,
+      privacySettings,
+      resourceTableViewState,
+      selectedResource,
+    ],
   );
 
   const runAutoAnalysis = useEffectEvent(() => {
@@ -358,6 +386,10 @@ export function WorkspaceShell() {
   ]);
 
   useEffect(() => {
+    setMetricsFromPlan(baseAnalyzedPlan);
+  }, [baseAnalyzedPlan, setMetricsFromPlan]);
+
+  useEffect(() => {
     if (!hasHydratedSavedState) {
       return;
     }
@@ -422,6 +454,51 @@ export function WorkspaceShell() {
     setSelectedResource(null);
     analyzeText(draftText, sourceName);
   }, [analyzeText, canAnalyze, draftText, sourceName]);
+
+  const handleRestoreHistoryEntry = useCallback(
+    async (entryId: string) => {
+      const restored = await getLocalHistoryRestorableSession(entryId);
+
+      if (!restored) {
+        return false;
+      }
+
+      startTransition(() => {
+        setActiveTab(restored.urlState?.inputTab ?? "paste");
+        setAutoAnalyze(false);
+        setCostImpactState(
+          restored.costImpactState ?? DEFAULT_COST_IMPACT_STATE,
+        );
+        setDraftText(restored.planJson);
+        setBlastRadiusFocusAddress(
+          restored.urlState?.blastRadiusFocusAddress ?? null,
+        );
+        setFindingsViewState(restored.urlState?.findings ?? null);
+        setResourceTableViewState(restored.urlState?.resources ?? null);
+        setGraphViewState(restored.urlState?.graph ?? null);
+        setSelectedResource(
+          restored.urlState?.selectedResourceAddress
+            ? {
+                address: restored.urlState.selectedResourceAddress,
+                initialTab: restored.urlState.resourceDetailsTab,
+              }
+            : null,
+        );
+        setPrivacySettings(
+          restored.urlState?.redactionSettings ?? privacySettings,
+        );
+        setLocalInputError(null);
+        setSourceName(restored.sourceName);
+        setUploadedFile(null);
+        reset();
+      });
+
+      analyzeText(restored.planJson, restored.sourceName);
+
+      return true;
+    },
+    [analyzeText, privacySettings, reset],
+  );
 
   const handleCopyCommand = useCallback(async () => {
     try {
@@ -822,14 +899,17 @@ export function WorkspaceShell() {
                   />
 
                   <LocalHistoryPanel
+                    costImpactState={costImpactState}
                     hasAnalyzed={status === "success"}
                     normalizedPlan={baseAnalyzedPlan}
                     onRememberHistoryChange={setRememberHistory}
+                    onRestoreEntry={handleRestoreHistoryEntry}
                     onThemeChange={setTheme}
                     rememberHistory={rememberHistory}
                     redactionSettings={privacySettings}
                     sourceName={analyzedSourceName}
                     theme={theme}
+                    urlState={currentUrlState}
                   />
 
                   {selectedResourceChange ? (

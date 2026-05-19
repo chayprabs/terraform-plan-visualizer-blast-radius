@@ -4,13 +4,20 @@ import { TerraformPlanVisualizer } from "@/features/terraform-plan";
 import TerraformPlanVisualizerPage, {
   metadata,
 } from "@/app/tools/terraform-plan-visualizer/page";
+import { getAbsoluteUrl, getSiteUrl, siteConfig } from "@/lib/site";
 
 describe("TerraformPlanVisualizer", () => {
   it("renders the product shell and local-processing privacy notice", () => {
     render(<TerraformPlanVisualizer />);
 
     expect(
-      screen.getByRole("heading", { name: /terraform plan visualizer/i }),
+      screen.getByRole("heading", { name: /three steps to a review-ready plan/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        level: 1,
+        name: /terraform plan visualizer/i,
+      }),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
@@ -72,10 +79,9 @@ describe("TerraformPlanVisualizer", () => {
     expect(
       screen.getByRole("heading", { name: /Large multi-module plan/i }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Terraform HCL linter and docs generator/i),
-    ).toBeInTheDocument();
-    expect(screen.getAllByText(/Coming soon/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Terraform HCL Linter/i)).toBeInTheDocument();
+    expect(screen.getByText(/Secrets Redactor/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Available now/i).length).toBeGreaterThan(1);
   });
 
   it("publishes route metadata and FAQ schema", () => {
@@ -92,9 +98,9 @@ describe("TerraformPlanVisualizer", () => {
       "Paste or upload Terraform plan JSON to visualize resource changes, detect risky deletes and replacements, inspect dependencies, and export a PR-ready blast-radius report.",
     );
     expect(metadata.alternates?.canonical).toBe(
-      "/tools/terraform-plan-visualizer",
+      getAbsoluteUrl(siteConfig.links.tools),
     );
-    expect(metadata.metadataBase?.toString()).toBe("https://example.com/");
+    expect(metadata.metadataBase?.toString()).toBe(`${getSiteUrl()}/`);
 
     const { container } = render(<TerraformPlanVisualizerPage />);
     const schemaScript = container.querySelector(

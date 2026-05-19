@@ -12,5 +12,7 @@ export default defineConfig({
     include: ["tests/unit/**/*.test.ts", "tests/unit/**/*.test.tsx"],
     setupFiles: ["./tests/unit/setup.ts"],
     testTimeout: 30000,
+    pool: "forks",
+    maxWorkers: 1,
   },
 });

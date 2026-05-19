@@ -1,3 +1,5 @@
+import { HeroSummaryCards } from "@/features/terraform-plan/components/hero-summary-cards";
+
 export function HeroSection() {
   return (
     <section className="border-border bg-surface rounded-lg border p-6 shadow-sm sm:p-8">
@@ -54,6 +56,7 @@ export function HeroSection() {
               </dd>
             </div>
           </dl>
+          <HeroSummaryCards />
         </aside>
       </div>
     </section>

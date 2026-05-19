@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { NormalizedPlan } from "@/features/terraform-plan/domain/normalizedPlanTypes";
+import type { CostImpactState } from "@/features/terraform-plan/cost/costTypes";
 import type { TerraformPlanRedactionSettings } from "@/features/terraform-plan/privacy/redactionTypes";
+import type { TerraformPlanUrlState } from "@/features/terraform-plan/state/urlState";
 import {
   clearLocalHistory,
   createLocalHistoryEntry,
@@ -15,14 +17,17 @@ import {
 import { cn } from "@/lib/utils";
 
 interface LocalHistoryPanelProps {
+  costImpactState: CostImpactState;
   hasAnalyzed: boolean;
   normalizedPlan: NormalizedPlan | null;
   onRememberHistoryChange: (rememberHistory: boolean) => void;
+  onRestoreEntry: (entryId: string) => Promise<boolean>;
   onThemeChange: (theme: ThemePreference) => void;
   rememberHistory: boolean;
   redactionSettings: TerraformPlanRedactionSettings;
   sourceName?: string;
   theme: ThemePreference;
+  urlState: TerraformPlanUrlState;
 }
 
 function formatStoredAt(value: string): string {
@@ -40,14 +45,17 @@ function EmptyState({ description }: { description: string }) {
 }
 
 export function LocalHistoryPanel({
+  costImpactState,
   hasAnalyzed,
   normalizedPlan,
   onRememberHistoryChange,
+  onRestoreEntry,
   onThemeChange,
   rememberHistory,
   redactionSettings,
   sourceName,
   theme,
+  urlState,
 }: LocalHistoryPanelProps) {
   const [entries, setEntries] = useState<LocalHistoryEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -123,6 +131,10 @@ export function LocalHistoryPanel({
           normalizedPlan,
           sourceName,
           redactionSettings,
+          {
+            costImpactState,
+            urlState,
+          },
         );
 
         await saveLocalHistoryEntry(entry);
@@ -140,9 +152,11 @@ export function LocalHistoryPanel({
     analysisSignature,
     hasAnalyzed,
     normalizedPlan,
+    costImpactState,
     redactionSettings,
     rememberHistory,
     sourceName,
+    urlState,
   ]);
 
   return (
@@ -153,9 +167,9 @@ export function LocalHistoryPanel({
             Local History &amp; Preferences
           </h3>
           <p className="text-muted-foreground mt-1 max-w-3xl text-sm leading-7">
-            Everything in this panel stays on this device. Recent analyses are
-            stored only as redacted summaries, and raw Terraform plan JSON is
-            never written to a server.
+            Everything in this panel stays on this device. When remembering is
+            enabled, Authos stores a redacted plan copy in IndexedDB so you can
+            reopen a prior review—nothing is sent to a server.
           </p>
         </div>
 
@@ -196,8 +210,8 @@ export function LocalHistoryPanel({
               Remember recent analyses on this device
             </span>
             <span className="text-muted-foreground mt-1 block text-sm leading-6">
-              Off by default. When enabled, this stores redacted summaries like
-              source name, total changes, and risk level locally.
+              Off by default. When enabled, this stores redacted plan JSON and
+              summary metadata locally so you can reopen a saved analysis.
             </span>
           </span>
         </label>
@@ -261,27 +275,51 @@ export function LocalHistoryPanel({
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  className="border-border bg-background text-foreground hover:bg-surface-muted inline-flex rounded-lg border px-3 py-2 text-sm font-medium transition-colors"
-                  onClick={async () => {
-                    try {
-                      await deleteLocalHistoryEntry(entry.id);
-                      setEntries(await listLocalHistoryEntries());
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    className="bg-brand text-brand-foreground hover:opacity-90 inline-flex rounded-lg px-3 py-2 text-sm font-medium transition-opacity disabled:cursor-not-allowed disabled:opacity-55"
+                    disabled={!entry.hasRestorablePlan}
+                    onClick={async () => {
+                      const restored = await onRestoreEntry(entry.id);
+
                       setToast({
-                        message: "Deleted local history entry",
-                        tone: "success",
+                        message: restored
+                          ? "Reopened saved analysis"
+                          : "This entry has no restorable plan on this device",
+                        tone: restored ? "success" : "error",
                       });
-                    } catch {
-                      setToast({
-                        message: "Local history entry could not be deleted.",
-                        tone: "error",
-                      });
+                    }}
+                    title={
+                      entry.hasRestorablePlan
+                        ? "Load the redacted plan saved with this entry"
+                        : "Only summary metadata was stored for this entry"
                     }
-                  }}
-                >
-                  Delete
-                </button>
+                  >
+                    Reopen
+                  </button>
+                  <button
+                    type="button"
+                    className="border-border bg-background text-foreground hover:bg-surface-muted inline-flex rounded-lg border px-3 py-2 text-sm font-medium transition-colors"
+                    onClick={async () => {
+                      try {
+                        await deleteLocalHistoryEntry(entry.id);
+                        setEntries(await listLocalHistoryEntries());
+                        setToast({
+                          message: "Deleted local history entry",
+                          tone: "success",
+                        });
+                      } catch {
+                        setToast({
+                          message: "Local history entry could not be deleted.",
+                          tone: "error",
+                        });
+                      }
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             </article>
           ))

@@ -10,6 +10,7 @@ import type {
   TerraformPlanExportFinding,
   TerraformPlanExportResourceChange,
 } from "@/features/terraform-plan/export/exportTypes";
+import { formatMarkdownTable } from "@/lib/authos/export/markdownTable";
 
 function formatMaybeValue(value: string | null): string {
   return value ?? "unknown";
@@ -31,14 +32,6 @@ function formatCostSource(source: TerraformPlanExportCostImpact["source"]): stri
   }
 }
 
-function formatTable(rows: string[][]): string[] {
-  return [
-    "| " + rows[0]!.join(" | ") + " |",
-    "| " + rows[0]!.map(() => "---").join(" | ") + " |",
-    ...rows.slice(1).map((row) => "| " + row.join(" | ") + " |"),
-  ];
-}
-
 function formatFinding(finding: TerraformPlanExportFinding, index: number): string[] {
   return [
     `${index}. **${finding.title}** (${formatSeverity(finding.severity)} | ${getRiskCategoryLabel(finding.category)} | ${getRiskActionLabel(finding.actionKind)})`,
@@ -57,7 +50,7 @@ function formatResourceList(
     return [`- ${emptyLabel}`];
   }
 
-  return formatTable([
+  return formatMarkdownTable([
     ["Action", "Resource", "Type", "Provider", "Module", "Risk", "Replace paths"],
     ...resources.map((resource) => [
       getRiskActionLabel(resource.action),
@@ -85,7 +78,7 @@ export function buildMarkdownReport(exportData: TerraformPlanExportData): string
     ...exportData.privacy.appliedRedactions.map((item) => `- ${item}`),
     "",
     "## Plan Summary",
-    ...formatTable([
+    ...formatMarkdownTable([
       ["Metric", "Value"],
       ["Total resource changes", String(exportData.summary.totalResourceChanges)],
       ["Creates", String(exportData.summary.createCount)],
@@ -129,7 +122,7 @@ export function buildMarkdownReport(exportData: TerraformPlanExportData): string
             : []),
           "",
           ...(exportData.costImpact.resourceEntries.length > 0
-            ? formatTable([
+            ? formatMarkdownTable([
                 ["Resource", "Delta/mo", "Before/mo", "After/mo", "Source"],
                 ...exportData.costImpact.resourceEntries.map((entry) => [
                   `\`${entry.address ?? entry.name ?? "unmapped"}\``,
@@ -160,7 +153,7 @@ export function buildMarkdownReport(exportData: TerraformPlanExportData): string
     ...formatResourceList(exportData.replacements, "No replacements were identified."),
     "",
     "## Provider Summary",
-    ...formatTable([
+    ...formatMarkdownTable([
       ["Provider", "Resources", "Destructive", "Resource types"],
       ...exportData.providers.map((provider) => [
         provider.shortName,
@@ -171,7 +164,7 @@ export function buildMarkdownReport(exportData: TerraformPlanExportData): string
     ]),
     "",
     "## Module Summary",
-    ...formatTable([
+    ...formatMarkdownTable([
       ["Module", "Depth", "Resources", "Destructive"],
       ...exportData.modules.map((module) => [
         module.address,

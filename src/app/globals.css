@@ -120,6 +120,14 @@
   border-color: var(--border);
 }
 
+.text-brand-foreground {
+  color: var(--brand-foreground);
+}
+
+.bg-brand {
+  background-color: var(--brand);
+}
+
 html {
   scroll-behavior: smooth;
 }
