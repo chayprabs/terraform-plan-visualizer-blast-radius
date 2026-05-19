@@ -63,6 +63,18 @@ describe("parseInfracostReportJson", () => {
     expect(result.report.totalMonthlyDelta).toBe(13.65);
   });
 
+  it("returns a friendly error for invalid JSON", () => {
+    const result = parseInfracostReportJson("{");
+
+    expect(result.ok).toBe(false);
+
+    if (result.ok) {
+      throw new Error("Expected parser failure.");
+    }
+
+    expect(result.message).toContain("JSON");
+  });
+
   it("returns a friendly error when Terraform plan JSON is pasted instead", () => {
     const result = parseInfracostReportJson(JSON.stringify(riskyPlan));
 

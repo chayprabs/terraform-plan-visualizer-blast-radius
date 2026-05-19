@@ -87,6 +87,25 @@ describe("validateTerraformPlanShape", () => {
     );
   });
 
+  it("rejects non-object root values", () => {
+    const validation = validateTerraformPlanShape(["not", "a", "plan"]);
+
+    expect(validation.valid).toBe(false);
+    expect(validation.errors[0]?.code).toBe("invalid-root");
+  });
+
+  it("rejects invalid resource_changes type", () => {
+    const validation = validateTerraformPlanShape({
+      format_version: "1.3",
+      resource_changes: "not-an-array",
+    });
+
+    expect(validation.valid).toBe(false);
+    expect(validation.errors.map((issue) => issue.code)).toContain(
+      "invalid-resource-changes",
+    );
+  });
+
   it("warns when JSON looks like a Terraform state file", () => {
     const validation = validateTerraformPlanShape({
       version: 4,
