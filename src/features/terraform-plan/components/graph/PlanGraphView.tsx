@@ -388,23 +388,23 @@ function getSvgNodeTone(node: GraphNode) {
   return {
     border:
       node.riskLevel === "critical"
-        ? SVG_EXPORT_COLORS.critical
+        ? "var(--critical)"
         : node.riskLevel === "high" || node.riskLevel === "medium"
-          ? SVG_EXPORT_COLORS.warning
+          ? "var(--warning)"
           : node.riskLevel === "low"
-            ? SVG_EXPORT_COLORS.positive
-            : SVG_EXPORT_COLORS.border,
-    fill: SVG_EXPORT_COLORS.surface,
+            ? "var(--positive)"
+            : "var(--border)",
+    fill: "var(--surface)",
     stripe:
       node.riskLevel === "critical"
-        ? SVG_EXPORT_COLORS.critical
+        ? "var(--critical)"
         : node.riskLevel === "high" || node.riskLevel === "medium"
-          ? SVG_EXPORT_COLORS.warning
+          ? "var(--warning)"
           : node.riskLevel === "low"
-            ? SVG_EXPORT_COLORS.positive
+            ? "var(--positive)"
             : node.riskLevel === "info"
-              ? SVG_EXPORT_COLORS.brand
-              : SVG_EXPORT_COLORS.border,
+              ? "var(--brand)"
+              : "var(--border)",
   };
 }
 
@@ -412,18 +412,18 @@ function getSvgActionColor(action: ChangeActionKind): string {
   switch (action) {
     case "create":
     case "import":
-      return SVG_EXPORT_COLORS.positive;
+      return "var(--positive)";
     case "update":
     case "forget":
-      return SVG_EXPORT_COLORS.warning;
+      return "var(--warning)";
     case "delete":
     case "replace":
-      return SVG_EXPORT_COLORS.critical;
+      return "var(--critical)";
     case "read":
     case "no-op":
     case "unknown":
     default:
-      return SVG_EXPORT_COLORS.border;
+      return "var(--border)";
   }
 }
 
@@ -472,12 +472,12 @@ function buildSvgExport(
       const labelY = (sourceY + targetY) / 2 - 10;
       const stroke =
         edge.relationshipType === "expression_reference"
-          ? "var(--warning)"
-          : "var(--foreground)";
+          ? SVG_EXPORT_COLORS.warning
+          : SVG_EXPORT_COLORS.foreground;
 
       return `
         <path d="M ${sourceX} ${sourceY} C ${sourceX + controlOffset} ${sourceY}, ${targetX - controlOffset} ${targetY}, ${targetX} ${targetY}" fill="none" stroke="${stroke}" stroke-width="1.8" ${edge.relationshipType === "expression_reference" ? 'stroke-dasharray="7 5"' : ""} />
-        <text x="${labelX}" y="${labelY}" fill="var(--muted-foreground)" font-family="IBM Plex Sans, sans-serif" font-size="11" font-weight="600" text-anchor="middle">${escapeSvgText(formatRelationshipType(edge.relationshipType))}</text>
+        <text x="${labelX}" y="${labelY}" fill="${SVG_EXPORT_COLORS.mutedForeground}" font-family="IBM Plex Sans, sans-serif" font-size="11" font-weight="600" text-anchor="middle">${escapeSvgText(formatRelationshipType(edge.relationshipType))}</text>
       `;
     })
     .join("");
