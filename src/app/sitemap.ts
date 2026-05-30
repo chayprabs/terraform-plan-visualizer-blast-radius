@@ -1,22 +1,34 @@
 import type { MetadataRoute } from "next";
-import { getAbsoluteUrl, siteConfig } from "@/lib/site";
-import { authosTools } from "@/lib/authos/tools-registry";
+import { productTools } from "@/lib/shared/tools-registry";
+import { getAbsoluteUrl } from "@/lib/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const lastModified = new Date();
+  const now = new Date();
 
   return [
     {
-      url: getAbsoluteUrl(siteConfig.links.home),
-      lastModified,
+      url: getAbsoluteUrl("/"),
+      lastModified: now,
       changeFrequency: "weekly",
       priority: 1,
     },
-    ...authosTools.map((tool) => ({
+    {
+      url: getAbsoluteUrl("/privacy"),
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.3,
+    },
+    {
+      url: getAbsoluteUrl("/terms"),
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.3,
+    },
+    ...productTools.map((tool) => ({
       url: getAbsoluteUrl(tool.href),
-      lastModified,
+      lastModified: now,
       changeFrequency: "weekly" as const,
-      priority: tool.id === "terraform-plan-visualizer" ? 0.9 : 0.8,
+      priority: 0.9,
     })),
   ];
 }

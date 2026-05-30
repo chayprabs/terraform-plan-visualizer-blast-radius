@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import { AppShell } from "@/components/layout/app-shell";
+import { siteConfig } from "@/lib/site";
 
 export default function GlobalError({
   error,
@@ -15,35 +17,31 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <div className="bg-background flex min-h-[50vh] items-center justify-center px-6 py-16">
-      <div className="border-border bg-surface max-w-lg rounded-lg border p-8 shadow-sm">
-        <p className="text-muted-foreground text-sm font-medium tracking-[0.18em] uppercase">
+    <AppShell>
+      <div className="mx-auto max-w-lg px-4 py-16 text-center sm:px-6">
+        <h1 className="text-foreground text-2xl font-semibold">
           Something went wrong
-        </p>
-        <h1 className="text-foreground mt-3 text-2xl font-semibold">
-          Authos hit an unexpected error
         </h1>
-        <p className="text-muted-foreground mt-3 text-sm leading-7">
-          Your Terraform plan and other inputs were not sent anywhere. Reload
-          the page to try again. If the problem persists, clear local browser
-          storage for this site.
+        <p className="text-muted-foreground mt-4 text-sm leading-7">
+          {siteConfig.name} hit an unexpected error. You can try again or return
+          to the workspace.
         </p>
-        <div className="mt-6 flex flex-wrap gap-3">
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
           <button
             type="button"
+            onClick={reset}
             className="bg-brand text-brand-foreground rounded-md px-4 py-2 text-sm font-medium"
-            onClick={() => reset()}
           >
-            Reload page
+            Try again
           </button>
           <Link
             href="/"
-            className="border-border bg-background text-foreground hover:bg-surface-muted inline-flex rounded-md border px-4 py-2 text-sm font-medium"
+            className="border-border text-foreground hover:bg-surface-muted rounded-md border px-4 py-2 text-sm font-medium"
           >
             Go home
           </Link>
         </div>
       </div>
-    </div>
+    </AppShell>
   );
 }

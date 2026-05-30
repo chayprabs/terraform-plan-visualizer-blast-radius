@@ -2,12 +2,12 @@
 
 import { useId, useMemo, useState } from "react";
 import { Container } from "@/components/ui/container";
-import { ToolWorkspaceLayout } from "@/lib/authos/components/ToolWorkspaceLayout";
+import { ToolWorkspaceLayout } from "@/lib/shared/components/ToolWorkspaceLayout";
 import { redactArbitraryText } from "@/features/secrets-redactor/domain/redactTextInput";
 import {
   DEFAULT_TERRAFORM_PLAN_REDACTION_SETTINGS,
   type TerraformPlanRedactionSettings,
-} from "@/lib/authos/privacy";
+} from "@/lib/shared/privacy";
 import { cn } from "@/lib/utils";
 
 export const MAX_SECRETS_REDACTOR_INPUT_BYTES = 25 * 1024 * 1024;

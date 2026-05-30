@@ -14,7 +14,7 @@ export const tinyPlan: TerraformPlan = {
           name: "assets",
           provider_name: 'provider["registry.terraform.io/hashicorp/aws"]',
           values: {
-            bucket: "authos-assets-prod",
+            bucket: "example-assets-prod",
           },
         },
       ],
@@ -31,7 +31,7 @@ export const tinyPlan: TerraformPlan = {
         actions: ["create"],
         before: null,
         after: {
-          bucket: "authos-assets-prod",
+          bucket: "example-assets-prod",
         },
         after_unknown: {
           arn: true,

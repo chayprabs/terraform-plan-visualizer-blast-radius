@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatMarkdownTable } from "@/lib/authos/export/markdownTable";
+import { formatMarkdownTable } from "@/lib/shared/export/markdownTable";
 
 describe("formatMarkdownTable", () => {
   it("formats a markdown table with header separator", () => {

@@ -168,7 +168,7 @@ export function LocalHistoryPanel({
           </h3>
           <p className="text-muted-foreground mt-1 max-w-3xl text-sm leading-7">
             Everything in this panel stays on this device. When remembering is
-            enabled, Authos stores a redacted plan copy in IndexedDB so you can
+            enabled, Terraform Plan Visualizer stores a redacted plan copy in IndexedDB so you can
             reopen a prior review—nothing is sent to a server.
           </p>
         </div>

@@ -88,7 +88,7 @@ export const faqItems = [
   },
 ] as const;
 
-export { authosTools as relatedTools } from "@/lib/authos/tools-registry";
+export { productTools as relatedTools } from "@/lib/shared/tools-registry";
 
 export const analyzerChecks = [
   "Normalizes Terraform resource changes into creates, updates, deletes, and replacements so reviewers can sort by impact instead of scanning raw JSON.",

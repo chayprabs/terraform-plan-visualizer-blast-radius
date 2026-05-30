@@ -1,7 +1,7 @@
 import type {
   StableAnonymizer,
   StablePlaceholderCategory,
-} from "@/lib/authos/privacy/redactionTypes";
+} from "@/lib/shared/privacy/redactionTypes";
 
 const categoryPrefixes: Record<StablePlaceholderCategory, string> = {
   account: "account",

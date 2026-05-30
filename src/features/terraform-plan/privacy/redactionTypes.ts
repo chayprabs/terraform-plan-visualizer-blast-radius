@@ -1,1 +1,1 @@
-export * from "@/lib/authos/privacy/redactionTypes";
+export * from "@/lib/shared/privacy/redactionTypes";

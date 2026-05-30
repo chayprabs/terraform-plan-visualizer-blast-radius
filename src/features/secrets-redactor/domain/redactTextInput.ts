@@ -2,7 +2,7 @@ import {
   detectSecretLikeString,
   redactText,
   type TerraformPlanRedactionSettings,
-} from "@/lib/authos/privacy";
+} from "@/lib/shared/privacy";
 
 const STABLE_PLACEHOLDER_PATTERN =
   /\b(?:account|domain|ip|module|resource)_\d{3}\b/g;

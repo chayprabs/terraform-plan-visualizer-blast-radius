@@ -4,7 +4,7 @@ import { analyzeRiskySample } from "./terraform-plan-helpers";
 test("exports a redacted PR comment after analyzing risky sample", async ({
   page,
 }) => {
-  await page.goto("/tools/terraform-plan-visualizer");
+  await page.goto("/");
 
   await analyzeRiskySample(page);
 

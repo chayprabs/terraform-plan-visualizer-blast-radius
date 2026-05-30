@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { KubernetesManifestAnalyzer } from "@/features/k8s-analyzer";
 import { faqItems } from "@/features/k8s-analyzer/data";
-import { serializeFaqJsonLd } from "@/lib/authos/seo/buildFaqJsonLd";
+import { serializeFaqJsonLd } from "@/lib/shared/seo/buildFaqJsonLd";
 import { getAbsoluteUrl, getSiteUrl } from "@/lib/site";
 
 const toolPath = "/tools/kubernetes-manifest-analyzer";
 
 const toolTitle =
-  "Kubernetes Manifest Analyzer - Local YAML Risk Review for Authos";
+  "Kubernetes Manifest Analyzer - Local YAML Risk Review for Terraform Plan Visualizer";
 const toolDescription =
   "Paste or upload Kubernetes YAML to detect floating image tags, missing limits, privileged containers, hostPath mounts, cluster-admin bindings, and deprecated API versions in your browser.";
 

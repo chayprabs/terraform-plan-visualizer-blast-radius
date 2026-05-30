@@ -12,7 +12,7 @@ test("renders the terraform plan visualizer route", async ({ page }) => {
   ).toBeVisible();
   await expect(
     page
-      .locator('section[aria-label="Privacy notice"]')
+      .getByLabel("Workspace privacy notice")
       .getByText(/Local processing: your plan is parsed in this browser tab\./),
   ).toBeVisible();
   await expect(page.getByRole("tab", { name: /Paste JSON/i })).toBeVisible();

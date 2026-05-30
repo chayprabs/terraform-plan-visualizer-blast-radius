@@ -1,1 +1,1 @@
-export * from "@/lib/authos/privacy/stableAnonymizer";
+export * from "@/lib/shared/privacy/stableAnonymizer";

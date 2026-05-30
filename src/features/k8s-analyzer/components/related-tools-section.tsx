@@ -1,15 +1,15 @@
 import Link from "next/link";
-import { authosTools } from "@/lib/authos/tools-registry";
+import { productTools } from "@/lib/shared/tools-registry";
 
 export function RelatedToolsSection() {
-  const relatedTools = authosTools.filter(
+  const relatedTools = productTools.filter(
     (tool) => tool.id !== "kubernetes-manifest-analyzer",
   );
 
   return (
     <section className="border-border bg-surface rounded-lg border p-6 sm:p-8">
       <h2 className="text-foreground text-2xl font-semibold tracking-tight">
-        Related Authos tools
+        Related Terraform Plan Visualizer tools
       </h2>
       <ul className="mt-5 grid gap-4 md:grid-cols-2">
         {relatedTools.map((tool) => (

@@ -18,7 +18,7 @@ import {
   getTextSizeBytes,
   type TerraformPlanWorkerOutputMessage,
 } from "@/features/terraform-plan/worker/workerMessages";
-import { createAnalysisWorker } from "@/lib/authos/worker/createAnalysisWorker";
+import { createAnalysisWorker } from "@/lib/shared/worker/createAnalysisWorker";
 
 const samplePlanMap = {
   riskyPlan,

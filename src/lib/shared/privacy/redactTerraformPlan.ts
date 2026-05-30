@@ -3,11 +3,11 @@ import type {
   TerraformPlan,
   TerraformResourceChange,
 } from "@/features/terraform-plan/domain/terraformPlanTypes";
-import { createStableAnonymizer } from "@/lib/authos/privacy/stableAnonymizer";
+import { createStableAnonymizer } from "@/lib/shared/privacy/stableAnonymizer";
 import {
   containsSecretLikeString,
   isSensitiveKeyName,
-} from "@/lib/authos/privacy/secretDetection";
+} from "@/lib/shared/privacy/secretDetection";
 import {
   DEFAULT_TERRAFORM_PLAN_REDACTION_SETTINGS,
   type RedactionOptions,
@@ -15,7 +15,7 @@ import {
   type StableAnonymizer,
   type StablePlaceholderCategory,
   type TerraformPlanRedactionSettings,
-} from "@/lib/authos/privacy/redactionTypes";
+} from "@/lib/shared/privacy/redactionTypes";
 
 const IPV4_PATTERN = /\b(?:\d{1,3}\.){3}\d{1,3}\b/g;
 const ACCOUNT_ID_PATTERN = /\b\d{12}\b/g;

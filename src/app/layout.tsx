@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import { AppShell } from "@/components/layout/app-shell";
-import { siteConfig } from "@/lib/site";
+import { getSiteUrl, siteConfig } from "@/lib/site";
 import "./globals.css";
 
 const sans = IBM_Plex_Sans({
@@ -17,12 +17,31 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getSiteUrl()),
   applicationName: siteConfig.name,
   title: {
-    default: siteConfig.name,
+    default: `${siteConfig.name} | Blast Radius & Risk Review`,
     template: `%s | ${siteConfig.name}`,
   },
-  description: siteConfig.description,
+  description: siteConfig.seoDescription,
+  keywords: [
+    "terraform plan visualizer",
+    "terraform show json",
+    "blast radius",
+    "infrastructure review",
+    "terraform plan review",
+  ],
+  openGraph: {
+    title: siteConfig.name,
+    description: siteConfig.seoDescription,
+    type: "website",
+    url: getSiteUrl(),
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: siteConfig.name,
+    description: siteConfig.seoDescription,
+  },
   icons: {
     icon: "/favicon.ico",
   },
@@ -34,9 +53,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${sans.variable} ${mono.variable}`}>
+    <html lang="en" className={`${sans.variable} ${mono.variable}`} data-theme="light">
       <body className="bg-background text-foreground min-h-screen font-sans antialiased">
-        <AppShell>{children}</AppShell>
+        {children}
       </body>
     </html>
   );

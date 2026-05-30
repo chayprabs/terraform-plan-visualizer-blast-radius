@@ -1,1 +1,1 @@
-export * from "@/lib/authos/privacy/secretDetection";
+export * from "@/lib/shared/privacy/secretDetection";

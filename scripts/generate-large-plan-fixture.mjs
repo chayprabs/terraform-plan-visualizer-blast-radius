@@ -12,7 +12,7 @@ const template = {
   change: {
     actions: ["create"],
     before: null,
-    after: { bucket: "authos-assets-prod" },
+    after: { bucket: "example-assets-prod" },
     after_unknown: { arn: true },
   },
 };

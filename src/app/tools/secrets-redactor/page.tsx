@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { SecretsRedactor } from "@/features/secrets-redactor/secrets-redactor";
 import { faqItems } from "@/features/secrets-redactor/data";
-import { serializeFaqJsonLd } from "@/lib/authos/seo/buildFaqJsonLd";
+import { serializeFaqJsonLd } from "@/lib/shared/seo/buildFaqJsonLd";
 import { getAbsoluteUrl, getSiteUrl } from "@/lib/site";
 
 const toolTitle = "Secrets Redactor - Mask Tokens and Identifiers Locally";

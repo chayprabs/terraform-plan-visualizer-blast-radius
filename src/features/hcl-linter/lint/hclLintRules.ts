@@ -2,7 +2,7 @@ import type { ParsedHcl } from "@/features/hcl-linter/domain/parseHcl";
 import {
   containsSecretLikeString,
   isSensitiveKeyName,
-} from "@/lib/authos/privacy";
+} from "@/lib/shared/privacy";
 
 export type HclLintSeverity = "error" | "warning" | "info";
 

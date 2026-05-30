@@ -36,20 +36,19 @@ export function getAbsoluteUrl(path: string): string {
 }
 
 export const siteConfig = {
-  name: "Authos",
+  name: "Terraform Plan Visualizer",
+  shortName: "Plan Visualizer",
+  tagline:
+    "Review terraform show -json plans with risk findings, dependency graphs, and blast-radius exports—entirely in your browser.",
+  seoDescription:
+    "Paste or upload Terraform plan JSON to visualize changes, flag risky deletes and replacements, explore dependencies, and export PR-ready blast-radius reports. No uploads to a server.",
   description:
-    "Browser-first developer tools built for local, trustworthy workflows.",
+    "Local-first Terraform plan review with blast radius, risk findings, and exportable reports.",
   links: {
     home: "/",
-    tools: "/tools/terraform-plan-visualizer",
     repository:
       "https://github.com/chayprabs/terraform-plan-visualizer-blast-radius",
+    twitter: "https://x.com/chayprabs",
+    website: "https://www.chaitanyaprabuddha.com",
   },
 } as const;
-
-export const primaryNavigation = [
-  {
-    label: "Tools",
-    href: siteConfig.links.tools,
-  },
-] as const;

@@ -1,7 +1,7 @@
 import type {
   SecretDetectionKind,
   SecretDetectionMatch,
-} from "@/lib/authos/privacy/redactionTypes";
+} from "@/lib/shared/privacy/redactionTypes";
 
 const sensitiveKeyPattern =
   /(?:^|[_-])(password|secret|client_secret|access_token|id_token|refresh_token|token|credential|access_key|api_key)(?:$|[_-])/i;

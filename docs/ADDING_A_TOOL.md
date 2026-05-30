@@ -1,9 +1,10 @@
-# Adding an Authos tool
+# Extending the codebase
 
-1. Add an entry to `src/lib/authos/tools-registry.ts` with `status: "available"`.
-2. Create `src/features/<tool-id>/` with domain logic and a root `<Tool>()` component.
-3. Add `src/app/tools/<route>/page.tsx` with metadata using `getSiteUrl()` / `getAbsoluteUrl()`.
-4. Add unit tests under `tests/unit/<tool-id>/` and e2e under `tests/e2e/`.
-5. Register the route in `src/app/sitemap.ts` (via `authosTools`).
+This repository is focused on the Terraform Plan Visualizer. Additional experimental tools may live under `src/app/tools/*` for development, but the production UI is the home-page workspace only.
 
-Keep analysis local-first. Document inputs, limits, and privacy behavior in the tool FAQ.
+To extend the main product:
+
+1. Add domain logic under `src/features/terraform-plan/`.
+2. Wire UI in `WorkspaceShell` or dedicated panels.
+3. Add unit tests beside the feature (`tests/unit/terraform-plan/`).
+4. Add or update Playwright flows in `tests/e2e/terraform-plan-*.spec.ts`.

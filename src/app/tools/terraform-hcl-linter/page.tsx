@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { HclLinter } from "@/features/hcl-linter/hcl-linter";
 import { faqItems } from "@/features/hcl-linter/data";
-import { serializeFaqJsonLd } from "@/lib/authos/seo/buildFaqJsonLd";
+import { serializeFaqJsonLd } from "@/lib/shared/seo/buildFaqJsonLd";
 import { getAbsoluteUrl, getSiteUrl } from "@/lib/site";
 
 const toolTitle = "Terraform HCL Linter - Lint modules and generate docs";

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { GitHubActionsAnalyzer } from "@/features/gha-analyzer/gha-analyzer";
 import { faqItems } from "@/features/gha-analyzer/data";
-import { serializeFaqJsonLd } from "@/lib/authos/seo/buildFaqJsonLd";
+import { serializeFaqJsonLd } from "@/lib/shared/seo/buildFaqJsonLd";
 import { getAbsoluteUrl, getSiteUrl } from "@/lib/site";
 
 const toolPath = "/tools/github-actions-analyzer";

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { authosTools } from "@/lib/authos/tools-registry";
+import { productTools } from "@/lib/shared/tools-registry";
 import { SectionHeading } from "@/features/terraform-plan/components/section-heading";
 import { cn } from "@/lib/utils";
 
@@ -8,12 +8,12 @@ export function RelatedToolsSection() {
     <section className="border-border bg-surface rounded-lg border p-6 shadow-sm sm:p-8">
       <SectionHeading
         eyebrow="Related tools"
-        title="Authos review tools"
+        title="Terraform Plan Visualizer review tools"
         description="Local-first analyzers for infrastructure review workflows. Everything runs in your browser tab unless you choose to export."
       />
 
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
-        {authosTools.map((tool) => {
+        {productTools.map((tool) => {
           const isAvailable = tool.status === "available";
 
           return (

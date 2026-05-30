@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { analyzeRiskySample, getPlanEditor } from "./terraform-plan-helpers";
 
 test("remembers and reopens a local analysis session", async ({ page }) => {
-  await page.goto("/tools/terraform-plan-visualizer");
+  await page.goto("/");
 
   await analyzeRiskySample(page);
 
@@ -23,7 +23,7 @@ test("remembers and reopens a local analysis session", async ({ page }) => {
 });
 
 test("shows a friendly invalid JSON error", async ({ page }) => {
-  await page.goto("/tools/terraform-plan-visualizer");
+  await page.goto("/");
 
   await getPlanEditor(page).fill("{ not valid json");
   await page.getByRole("button", { name: /Analyze plan/i }).click();

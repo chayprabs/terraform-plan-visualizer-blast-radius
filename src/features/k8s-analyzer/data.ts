@@ -35,7 +35,7 @@ export const faqItems = [
   {
     question: "Are my manifests uploaded to a server?",
     answer:
-      "No. Parsing and risk evaluation run entirely in this browser tab. Nothing is sent to Authos servers.",
+      "No. Parsing and risk evaluation run entirely in this browser tab. Nothing is sent to Terraform Plan Visualizer servers.",
   },
   {
     question: "Which risks are detected?",

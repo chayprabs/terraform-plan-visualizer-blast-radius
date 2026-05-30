@@ -7,7 +7,7 @@ export const faqItems = [
   {
     question: "Is my text uploaded to a server?",
     answer:
-      "No. Redaction runs locally in this browser tab. Nothing is sent to Authos servers.",
+      "No. Redaction runs locally in this browser tab. Nothing is sent to Terraform Plan Visualizer servers.",
   },
   {
     question: "What file types are supported?",

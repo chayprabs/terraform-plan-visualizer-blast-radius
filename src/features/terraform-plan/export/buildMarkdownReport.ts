@@ -10,7 +10,7 @@ import type {
   TerraformPlanExportFinding,
   TerraformPlanExportResourceChange,
 } from "@/features/terraform-plan/export/exportTypes";
-import { formatMarkdownTable } from "@/lib/authos/export/markdownTable";
+import { formatMarkdownTable } from "@/lib/shared/export/markdownTable";
 
 function formatMaybeValue(value: string | null): string {
   return value ?? "unknown";
