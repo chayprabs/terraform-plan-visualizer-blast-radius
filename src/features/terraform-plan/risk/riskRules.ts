@@ -518,7 +518,7 @@ export const RESOURCE_RISK_RULES: ResourceRiskRule[] = [
   {
     id: "secret-change",
     evaluate: (change) =>
-      isSecretResource(change)
+      isSecretResource(change) && hasPlanMutableAction(change)
         ? [
             createResourceFinding("secret-change", change, {
               severity: "high",

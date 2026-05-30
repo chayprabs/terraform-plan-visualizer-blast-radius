@@ -326,7 +326,10 @@ export function WorkspaceShell() {
       applyThemePreference(savedPreferences.theme);
       setPrivacySettings(
         parsedUrlState.hasRedactionSettings
-          ? parsedUrlState.state.redactionSettings
+          ? mergeRedactionSettings(
+              savedPreferences.redactionSettings,
+              parsedUrlState.state.redactionSettings,
+            )
           : savedPreferences.redactionSettings,
       );
       setBlastRadiusFocusAddress(

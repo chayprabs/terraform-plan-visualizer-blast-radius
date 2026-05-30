@@ -27,8 +27,8 @@ export function getProviderShortName(provider_name?: string): string {
   return shortName || "unknown";
 }
 
-export function getResourceTypeGroup(resourceType: string): ResourceTypeGroup {
-  const normalizedType = resourceType.trim().toLowerCase();
+export function getResourceTypeGroup(resourceType?: string): ResourceTypeGroup {
+  const normalizedType = String(resourceType ?? "").trim().toLowerCase();
 
   if (!normalizedType) {
     return "unknown";

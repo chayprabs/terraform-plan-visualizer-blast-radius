@@ -53,6 +53,27 @@ export const DEFAULT_TERRAFORM_PLAN_LOCAL_PREFERENCES: TerraformPlanLocalPrefere
     theme: "system",
   };
 
+/** URL share links may only enable stricter redaction flags, never weaken saved prefs. */
+export function mergeRedactionSettings(
+  saved: TerraformPlanRedactionSettings,
+  fromUrl: TerraformPlanRedactionSettings,
+): TerraformPlanRedactionSettings {
+  return {
+    maskTerraformSensitiveValues: true,
+    detectSecretLikeStrings:
+      saved.detectSecretLikeStrings || fromUrl.detectSecretLikeStrings,
+    anonymizeResourceNamesInExports:
+      saved.anonymizeResourceNamesInExports ||
+      fromUrl.anonymizeResourceNamesInExports,
+    maskCloudAccountIdsInExports:
+      saved.maskCloudAccountIdsInExports || fromUrl.maskCloudAccountIdsInExports,
+    maskDomainNamesInExports:
+      saved.maskDomainNamesInExports || fromUrl.maskDomainNamesInExports,
+    maskIpAddressesInExports:
+      saved.maskIpAddressesInExports || fromUrl.maskIpAddressesInExports,
+  };
+}
+
 export const MAX_LOCAL_HISTORY_ENTRIES = 20;
 export const MAX_RESTORABLE_PLAN_BYTES = 10 * 1024 * 1024;
 

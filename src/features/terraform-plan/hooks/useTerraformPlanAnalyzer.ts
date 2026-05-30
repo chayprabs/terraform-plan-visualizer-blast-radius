@@ -18,7 +18,7 @@ import {
   getTextSizeBytes,
   type TerraformPlanWorkerOutputMessage,
 } from "@/features/terraform-plan/worker/workerMessages";
-import { createAnalysisWorker } from "@/lib/shared/worker/createAnalysisWorker";
+import { createAnalysisWorker } from "@/lib/authos/worker/createAnalysisWorker";
 
 const samplePlanMap = {
   riskyPlan,
@@ -40,6 +40,7 @@ export function useTerraformPlanAnalyzer() {
     createInitialAnalysisState,
   );
   const workerRef = useRef<Worker | null>(null);
+  const analysisGenerationRef = useRef(0);
 
   const terminateWorker = useCallback(() => {
     workerRef.current?.terminate();
