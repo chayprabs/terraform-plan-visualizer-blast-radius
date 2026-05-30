@@ -109,7 +109,7 @@ vi.mock("@xyflow/react", async () => {
 
 describe("WorkspaceShell graph integration", () => {
   beforeEach(() => {
-    window.history.replaceState({}, "", "/tools/terraform-plan-visualizer");
+    window.history.replaceState({}, "", "/");
     window.localStorage.clear();
     document.documentElement.removeAttribute("data-theme");
   });

@@ -1,54 +1,36 @@
 import type { Metadata } from "next";
-import { AppShell } from "@/components/layout/app-shell";
+import { TerraformPlanVisualizer } from "@/features/terraform-plan";
 import { faqItems } from "@/features/terraform-plan/data";
-import { TerraformPlanHome } from "@/features/terraform-plan/terraform-plan-home";
 import { serializeFaqJsonLd } from "@/lib/shared/seo/buildFaqJsonLd";
 import { getAbsoluteUrl, getSiteUrl, siteConfig } from "@/lib/site";
 
+const toolTitle =
+  "Terraform Plan Visualizer - Blast-Radius Analyzer for terraform show -json";
+const toolDescription = siteConfig.description;
+
 export const metadata: Metadata = {
-  title: `${siteConfig.name} | Blast Radius & Risk Review`,
-  description: siteConfig.seoDescription,
+  metadataBase: new URL(getSiteUrl()),
+  title: toolTitle,
+  description: toolDescription,
   alternates: {
-    canonical: getAbsoluteUrl("/"),
+    canonical: getAbsoluteUrl(siteConfig.links.home),
   },
   openGraph: {
-    title: siteConfig.name,
-    description: siteConfig.seoDescription,
+    title: toolTitle,
+    description: toolDescription,
     type: "website",
-    url: getAbsoluteUrl("/"),
+    url: getAbsoluteUrl(siteConfig.links.home),
   },
 };
 
-function buildWebApplicationJsonLd() {
-  return JSON.stringify({
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    name: siteConfig.name,
-    description: siteConfig.seoDescription,
-    applicationCategory: "DeveloperApplication",
-    operatingSystem: "Any",
-    offers: {
-      "@type": "Offer",
-      price: "0",
-      priceCurrency: "USD",
-    },
-    browserRequirements: "Requires JavaScript. Runs entirely in the browser.",
-    url: getSiteUrl(),
-  });
-}
-
 export default function HomePage() {
   return (
-    <AppShell showSeoIntro>
+    <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeFaqJsonLd(faqItems) }}
       />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: buildWebApplicationJsonLd() }}
-      />
-      <TerraformPlanHome />
-    </AppShell>
+      <TerraformPlanVisualizer variant="workspace" />
+    </>
   );
 }

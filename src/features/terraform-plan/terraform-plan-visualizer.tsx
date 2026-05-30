@@ -10,8 +10,29 @@ import { UseCasesSection } from "@/features/terraform-plan/components/use-cases-
 import { ReviewGuideSection } from "@/features/terraform-plan/components/review-guide-section";
 import { RelatedToolsSection } from "@/features/terraform-plan/components/related-tools-section";
 import { WorkspaceShell } from "@/features/terraform-plan/components/workspace-shell";
+import { siteConfig } from "@/lib/site";
 
-export function TerraformPlanVisualizer() {
+type TerraformPlanVisualizerProps = {
+  variant?: "workspace" | "full";
+};
+
+export function TerraformPlanVisualizer({
+  variant = "full",
+}: TerraformPlanVisualizerProps) {
+  if (variant === "workspace") {
+    return (
+      <PlanMetricsProvider>
+        <div className="py-6 sm:py-8">
+          <Container className="space-y-6">
+            <h1 className="sr-only">{siteConfig.name}</h1>
+            <PrivacyStrip />
+            <WorkspaceShell />
+          </Container>
+        </div>
+      </PlanMetricsProvider>
+    );
+  }
+
   return (
     <PlanMetricsProvider>
       <div className="py-8 sm:py-10">

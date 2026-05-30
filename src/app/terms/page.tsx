@@ -1,90 +1,135 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AppShell } from "@/components/layout/app-shell";
+import { Container } from "@/components/ui/container";
 import { getAbsoluteUrl, siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Terms & Conditions",
+  title: "Terms of Use",
   description: `Terms of use for ${siteConfig.name}.`,
-  alternates: { canonical: getAbsoluteUrl("/terms") },
+  alternates: {
+    canonical: getAbsoluteUrl(siteConfig.links.terms),
+  },
 };
 
 export default function TermsPage() {
+  const effectiveDate = "May 30, 2026";
+
   return (
-    <AppShell>
-      <article className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
-        <h1 className="text-foreground text-3xl font-semibold tracking-tight">
-          Terms &amp; Conditions
-        </h1>
-        <p className="text-muted-foreground mt-2 text-sm">
-          Last updated: May 30, 2026
-        </p>
+    <Container className="py-12 sm:py-16">
+      <h1 className="text-foreground text-3xl font-semibold tracking-tight">
+        Terms of Use
+      </h1>
+      <p className="text-muted-foreground mt-3 text-sm">
+        Effective date: {effectiveDate}
+      </p>
 
-        <div className="text-foreground mt-8 space-y-6 text-sm leading-7">
-          <section>
-            <h2 className="text-lg font-semibold">Acceptance</h2>
-            <p className="text-muted-foreground mt-2">
-              By using {siteConfig.name}, you agree to these terms. If you do not
-              agree, do not use the service.
-            </p>
-          </section>
+      <div className="text-foreground mt-10 max-w-3xl space-y-8 text-base leading-8">
+        <section>
+          <h2 className="text-xl font-semibold">Agreement</h2>
+          <p className="text-muted-foreground mt-3">
+            By accessing or using {siteConfig.name}, you agree to these Terms of
+            Use. If you do not agree, do not use the site.
+          </p>
+        </section>
 
-          <section>
-            <h2 className="text-lg font-semibold">Review aid only</h2>
-            <p className="text-muted-foreground mt-2">
-              This tool is an assistant for human review of Terraform plans. It is
-              not a policy engine, security scanner with guarantees, or a
-              substitute for your organization&apos;s change-management process.
-              Findings are heuristic and may be incomplete or incorrect.
-            </p>
-          </section>
+        <section>
+          <h2 className="text-xl font-semibold">Service description</h2>
+          <p className="text-muted-foreground mt-3">
+            The site provides client-side tools to help you review Terraform plan
+            JSON, including change summaries, risk findings, dependency graphs,
+            and exportable reports. The software is provided for informational
+            review support. It is not a substitute for your own change
+            management, security review, or approval processes.
+          </p>
+        </section>
 
-          <section>
-            <h2 className="text-lg font-semibold">Your responsibility</h2>
-            <p className="text-muted-foreground mt-2">
-              You are solely responsible for infrastructure changes, compliance,
-              and verifying exports before sharing. Always run official{" "}
-              <code className="text-foreground font-mono text-xs">
-                terraform plan
-              </code>{" "}
-              and approval workflows required by your team.
-            </p>
-          </section>
+        <section>
+          <h2 className="text-xl font-semibold">No warranty</h2>
+          <p className="text-muted-foreground mt-3">
+            THE SERVICE IS PROVIDED &ldquo;AS IS&rdquo; AND &ldquo;AS
+            AVAILABLE&rdquo; WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
+            IMPLIED, INCLUDING MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE,
+            AND NON-INFRINGEMENT. We do not warrant that risk findings, blast
+            radius views, cost estimates, or exports are complete, accurate, or
+            suitable for production decisions.
+          </p>
+        </section>
 
-          <section>
-            <h2 className="text-lg font-semibold">Disclaimer of warranties</h2>
-            <p className="text-muted-foreground mt-2">
-              THE SERVICE IS PROVIDED &quot;AS IS&quot; WITHOUT WARRANTIES OF ANY
-              KIND, EXPRESS OR IMPLIED, INCLUDING MERCHANTABILITY, FITNESS FOR A
-              PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
-            </p>
-          </section>
+        <section>
+          <h2 className="text-xl font-semibold">Limitation of liability</h2>
+          <p className="text-muted-foreground mt-3">
+            TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE AUTHORS AND CONTRIBUTORS
+            WILL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL,
+            CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS, DATA, OR
+            GOODWILL, ARISING FROM YOUR USE OF THE SERVICE, EVEN IF ADVISED OF
+            THE POSSIBILITY OF SUCH DAMAGES.
+          </p>
+        </section>
 
-          <section>
-            <h2 className="text-lg font-semibold">Limitation of liability</h2>
-            <p className="text-muted-foreground mt-2">
-              TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE AUTHORS AND
-              CONTRIBUTORS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL,
-              SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS,
-              DATA, OR GOODWILL, ARISING FROM YOUR USE OF THE SERVICE.
-            </p>
-          </section>
+        <section>
+          <h2 className="text-xl font-semibold">Your responsibilities</h2>
+          <p className="text-muted-foreground mt-3">
+            You are responsible for the Terraform plans and exports you load
+            into the tool, for complying with your organization&apos;s security
+            policies, and for verifying changes before apply. Do not load
+            secrets into shared machines or share unredacted exports in public
+            channels.
+          </p>
+        </section>
 
-          <section>
-            <h2 className="text-lg font-semibold">Changes</h2>
-            <p className="text-muted-foreground mt-2">
-              These terms may be updated from time to time. Continued use after
-              changes constitutes acceptance of the revised terms.
-            </p>
-          </section>
-        </div>
+        <section>
+          <h2 className="text-xl font-semibold">Acceptable use</h2>
+          <p className="text-muted-foreground mt-3">
+            You may not attempt to disrupt the site, probe systems you do not
+            own, or use the service in violation of applicable law. Automated
+            scraping that degrades availability for other users is not permitted.
+          </p>
+        </section>
 
-        <p className="text-muted-foreground mt-10 text-sm">
-          <Link href="/" className="text-brand hover:underline">
-            ← Back to {siteConfig.name}
+        <section>
+          <h2 className="text-xl font-semibold">Open source</h2>
+          <p className="text-muted-foreground mt-3">
+            Source code is available under the license published in the
+            repository. Third-party dependencies are subject to their own
+            licenses.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-xl font-semibold">Changes</h2>
+          <p className="text-muted-foreground mt-3">
+            We may modify these terms. Continued use after updates constitutes
+            acceptance of the revised terms shown on this page.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-xl font-semibold">Contact</h2>
+          <p className="text-muted-foreground mt-3">
+            Report issues or questions through{" "}
+            <a
+              href={siteConfig.links.repository}
+              className="text-foreground underline"
+              rel="noreferrer"
+              target="_blank"
+            >
+              GitHub
+            </a>
+            .
+          </p>
+        </section>
+
+        <p className="text-muted-foreground text-sm">
+          See also our{" "}
+          <Link
+            href={siteConfig.links.privacy}
+            className="text-foreground underline"
+          >
+            Privacy Policy
           </Link>
+          .
         </p>
-      </article>
-    </AppShell>
+      </div>
+    </Container>
   );
 }

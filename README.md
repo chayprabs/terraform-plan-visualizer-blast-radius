@@ -1,14 +1,18 @@
-# Terraform Plan Visualizer
+# Authos
 
-Paste or upload `terraform show -json` output to review resource changes, risk findings, dependency graphs, and blast-radius exports—entirely in your browser. Nothing is uploaded to a server.
+Browser-first developer tools for local, trustworthy infrastructure review.
 
-## Features
+## Tools
 
-- Plan summary dashboard with provider, module, and resource-type breakdowns
-- Heuristic risk findings for destructive or sensitive changes
-- Interactive dependency graph with blast-radius focus
-- Privacy redaction for exports and optional local history (IndexedDB)
-- PR-ready Markdown, HTML, and JSON exports
+| Tool | Route |
+|------|--------|
+| Terraform Plan Visualizer | `/` (legacy `/tools/terraform-plan-visualizer` redirects home) |
+| Secrets Redactor | `/tools/secrets-redactor` |
+| GitHub Actions Workflow Analyzer | `/tools/github-actions-analyzer` |
+| Kubernetes Manifest Analyzer | `/tools/kubernetes-manifest-analyzer` |
+| Terraform HCL Linter | `/tools/terraform-hcl-linter` |
+
+All core analysis runs in your browser. There is no authentication and no backend API for processing sensitive inputs.
 
 ## Stack
 
@@ -48,12 +52,7 @@ CI runs lint, typecheck, tests, e2e, and build on every push to `main`. Connect 
 ## Documentation
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- [Privacy Policy](/privacy) (also at `/privacy` when running locally)
-- [Terms & Conditions](/terms)
-
-## License
-
-MIT — see [LICENSE](LICENSE).
+- [docs/ADDING_A_TOOL.md](docs/ADDING_A_TOOL.md)
 
 ## Repository
 

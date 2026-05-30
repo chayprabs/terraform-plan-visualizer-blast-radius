@@ -2,17 +2,17 @@ import { expect, test } from "@playwright/test";
 import { analyzeRiskySample } from "./terraform-plan-helpers";
 
 test("renders the terraform plan visualizer route", async ({ page }) => {
-  await page.goto("/tools/terraform-plan-visualizer");
+  await page.goto("/");
 
   await expect(
     page.getByRole("heading", {
       level: 1,
       name: /terraform plan visualizer/i,
     }),
-  ).toBeVisible();
+  ).toBeAttached();
   await expect(
     page
-      .getByLabel("Workspace privacy notice")
+      .locator('section[aria-label="Privacy notice"]')
       .getByText(/Local processing: your plan is parsed in this browser tab\./),
   ).toBeVisible();
   await expect(page.getByRole("tab", { name: /Paste JSON/i })).toBeVisible();
@@ -22,7 +22,7 @@ test("renders the terraform plan visualizer route", async ({ page }) => {
 });
 
 test("loads the risky sample and analyzes it", async ({ page }) => {
-  await page.goto("/tools/terraform-plan-visualizer");
+  await page.goto("/");
 
   await analyzeRiskySample(page);
 

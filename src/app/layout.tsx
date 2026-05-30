@@ -20,28 +20,10 @@ export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
   applicationName: siteConfig.name,
   title: {
-    default: `${siteConfig.name} | Blast Radius & Risk Review`,
+    default: siteConfig.name,
     template: `%s | ${siteConfig.name}`,
   },
-  description: siteConfig.seoDescription,
-  keywords: [
-    "terraform plan visualizer",
-    "terraform show json",
-    "blast radius",
-    "infrastructure review",
-    "terraform plan review",
-  ],
-  openGraph: {
-    title: siteConfig.name,
-    description: siteConfig.seoDescription,
-    type: "website",
-    url: getSiteUrl(),
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: siteConfig.name,
-    description: siteConfig.seoDescription,
-  },
+  description: siteConfig.description,
   icons: {
     icon: "/favicon.ico",
   },
@@ -53,9 +35,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${sans.variable} ${mono.variable}`} data-theme="light">
+    <html lang="en" className={`${sans.variable} ${mono.variable}`}>
       <body className="bg-background text-foreground min-h-screen font-sans antialiased">
-        {children}
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

@@ -53,7 +53,6 @@ import {
   applyThemePreference,
   getLocalHistoryRestorableSession,
   loadLocalPreferences,
-  mergeRedactionSettings,
   saveLocalPreferences,
   type ThemePreference,
 } from "@/features/terraform-plan/state/localPreferences";

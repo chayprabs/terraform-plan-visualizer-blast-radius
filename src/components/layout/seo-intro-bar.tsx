@@ -3,20 +3,15 @@ import { siteConfig } from "@/lib/site";
 export function SeoIntroBar() {
   return (
     <section
-      className="border-border bg-surface-muted border-b"
-      aria-labelledby="product-intro-heading"
+      className="border-border bg-surface w-full border-b px-4 py-4 sm:px-6 lg:px-8"
+      aria-label="Product introduction"
     >
-      <div className="mx-auto w-full max-w-6xl px-4 py-4 sm:px-6 sm:py-5">
-        <h1
-          id="product-intro-heading"
-          className="text-foreground text-lg font-semibold tracking-tight sm:text-xl"
-        >
-          {siteConfig.name}
-        </h1>
-        <p className="text-muted-foreground mt-1 max-w-4xl text-sm leading-6 sm:text-[0.95rem]">
-          {siteConfig.tagline}
-        </p>
-      </div>
+      <p className="text-foreground mx-auto max-w-6xl text-base leading-7 font-medium sm:text-lg">
+        {siteConfig.seoIntro.line1}
+      </p>
+      <p className="text-muted-foreground mx-auto mt-2 max-w-6xl text-sm leading-7 sm:text-base">
+        {siteConfig.seoIntro.line2}
+      </p>
     </section>
   );
 }
