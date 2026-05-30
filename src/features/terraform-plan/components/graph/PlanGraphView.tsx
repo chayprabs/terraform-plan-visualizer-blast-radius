@@ -85,6 +85,18 @@ type GraphRiskFilter = GraphNodeRiskLevel | "all";
 
 const LARGE_GRAPH_WARNING_THRESHOLD = 500;
 const LARGE_GRAPH_BLOCK_THRESHOLD = 1500;
+/** Literal colors for standalone SVG export (CSS variables are unavailable outside the app). */
+const SVG_EXPORT_COLORS = {
+  background: "#ffffff",
+  border: "#d7dee8",
+  brand: "#1554d1",
+  critical: "#b33a2d",
+  foreground: "#0f172a",
+  mutedForeground: "#5b6476",
+  positive: "#1f7a45",
+  surface: "#ffffff",
+  warning: "#a05a00",
+} as const;
 const LAYER_GAP = 140;
 const MODULE_BAND_GAP = 88;
 const MODULE_HEADER_GAP = 42;
@@ -472,12 +484,12 @@ function buildSvgExport(
       const labelY = (sourceY + targetY) / 2 - 10;
       const stroke =
         edge.relationshipType === "expression_reference"
-          ? "var(--warning)"
-          : "var(--foreground)";
+          ? SVG_EXPORT_COLORS.warning
+          : SVG_EXPORT_COLORS.foreground;
 
       return `
         <path d="M ${sourceX} ${sourceY} C ${sourceX + controlOffset} ${sourceY}, ${targetX - controlOffset} ${targetY}, ${targetX} ${targetY}" fill="none" stroke="${stroke}" stroke-width="1.8" ${edge.relationshipType === "expression_reference" ? 'stroke-dasharray="7 5"' : ""} />
-        <text x="${labelX}" y="${labelY}" fill="var(--muted-foreground)" font-family="IBM Plex Sans, sans-serif" font-size="11" font-weight="600" text-anchor="middle">${escapeSvgText(formatRelationshipType(edge.relationshipType))}</text>
+        <text x="${labelX}" y="${labelY}" fill="${SVG_EXPORT_COLORS.mutedForeground}" font-family="IBM Plex Sans, sans-serif" font-size="11" font-weight="600" text-anchor="middle">${escapeSvgText(formatRelationshipType(edge.relationshipType))}</text>
       `;
     })
     .join("");
@@ -493,11 +505,11 @@ function buildSvgExport(
           <rect x="${x}" y="${y}" rx="20" ry="20" width="${PLAN_GRAPH_NODE_WIDTH}" height="${PLAN_GRAPH_NODE_HEIGHT}" fill="${tone.fill}" stroke="${tone.border}" stroke-width="1.5" />
           <rect x="${x}" y="${y}" rx="20" ry="20" width="${PLAN_GRAPH_NODE_WIDTH}" height="6" fill="${tone.stripe}" />
           <circle cx="${x + 18}" cy="${y + 22}" r="7" fill="${getSvgActionColor(node.actionKind)}" />
-          <text x="${x + 34}" y="${y + 25}" fill="var(--foreground)" font-family="IBM Plex Sans, sans-serif" font-size="14" font-weight="700">${escapeSvgText(sanitizeText(node.label))}</text>
-          <text x="${x + 16}" y="${y + 49}" fill="var(--muted-foreground)" font-family="IBM Plex Mono, monospace" font-size="10">${escapeSvgText(sanitizeText(node.id))}</text>
-          <text x="${x + 16}" y="${y + 76}" fill="var(--muted-foreground)" font-family="IBM Plex Sans, sans-serif" font-size="11" font-weight="600">${escapeSvgText(sanitizeText(node.resourceType))}</text>
-          <text x="${x + 16}" y="${y + 96}" fill="var(--muted-foreground)" font-family="IBM Plex Sans, sans-serif" font-size="11">${escapeSvgText(sanitizeText(node.provider))} | ${escapeSvgText(sanitizeText(node.module))}</text>
-          <text x="${x + 16}" y="${y + 116}" fill="var(--muted-foreground)" font-family="IBM Plex Sans, sans-serif" font-size="11">${escapeSvgText(sanitizeText(node.resourceGroup))} | ${escapeSvgText(sanitizeText(node.actionKind))}</text>
+          <text x="${x + 34}" y="${y + 25}" fill="${SVG_EXPORT_COLORS.foreground}" font-family="IBM Plex Sans, sans-serif" font-size="14" font-weight="700">${escapeSvgText(sanitizeText(node.label))}</text>
+          <text x="${x + 16}" y="${y + 49}" fill="${SVG_EXPORT_COLORS.mutedForeground}" font-family="IBM Plex Mono, monospace" font-size="10">${escapeSvgText(sanitizeText(node.id))}</text>
+          <text x="${x + 16}" y="${y + 76}" fill="${SVG_EXPORT_COLORS.mutedForeground}" font-family="IBM Plex Sans, sans-serif" font-size="11" font-weight="600">${escapeSvgText(sanitizeText(node.resourceType))}</text>
+          <text x="${x + 16}" y="${y + 96}" fill="${SVG_EXPORT_COLORS.mutedForeground}" font-family="IBM Plex Sans, sans-serif" font-size="11">${escapeSvgText(sanitizeText(node.provider))} | ${escapeSvgText(sanitizeText(node.module))}</text>
+          <text x="${x + 16}" y="${y + 116}" fill="${SVG_EXPORT_COLORS.mutedForeground}" font-family="IBM Plex Sans, sans-serif" font-size="11">${escapeSvgText(sanitizeText(node.resourceGroup))} | ${escapeSvgText(sanitizeText(node.actionKind))}</text>
         </g>
       `;
     })
@@ -505,7 +517,7 @@ function buildSvgExport(
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-  <rect width="100%" height="100%" fill="var(--background)" />
+  <rect width="100%" height="100%" fill="${SVG_EXPORT_COLORS.background}" />
   ${edgeMarkup}
   ${nodeMarkup}
 </svg>`;
@@ -643,17 +655,21 @@ export function PlanGraphView({
   ]);
 
   useEffect(() => {
-    const nextSelectedNodeId =
-      selectedAddress && resourceNodeMap.has(selectedAddress)
-        ? selectedAddress
-        : blastRadiusFocusAddress && resourceNodeMap.has(blastRadiusFocusAddress)
-          ? blastRadiusFocusAddress
-          : null;
+    let nextSelectedNodeId: string | null = null;
 
-    if (nextSelectedNodeId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSelectedNodeId(nextSelectedNodeId);
+    if (selectedAddress && resourceNodeMap.has(selectedAddress)) {
+      nextSelectedNodeId = selectedAddress;
+    } else if (selectedAddress === null) {
+      if (
+        blastRadiusFocusAddress &&
+        resourceNodeMap.has(blastRadiusFocusAddress)
+      ) {
+        nextSelectedNodeId = blastRadiusFocusAddress;
+      }
     }
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelectedNodeId(nextSelectedNodeId);
   }, [blastRadiusFocusAddress, resourceNodeMap, selectedAddress]);
 
   const effectiveSelectedNodeId =
