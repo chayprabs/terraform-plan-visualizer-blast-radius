@@ -14,7 +14,7 @@ export default defineConfig({
   webServer: {
     command: "pnpm exec next dev --hostname 127.0.0.1 --port 3104",
     url: "http://127.0.0.1:3104",
-    reuseExistingServer: false,
+    reuseExistingServer: true,
     timeout: 120000,
   },
   projects: [
