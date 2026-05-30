@@ -472,12 +472,12 @@ function buildSvgExport(
       const labelY = (sourceY + targetY) / 2 - 10;
       const stroke =
         edge.relationshipType === "expression_reference"
-          ? SVG_EXPORT_COLORS.warning
-          : SVG_EXPORT_COLORS.foreground;
+          ? "var(--warning)"
+          : "var(--foreground)";
 
       return `
         <path d="M ${sourceX} ${sourceY} C ${sourceX + controlOffset} ${sourceY}, ${targetX - controlOffset} ${targetY}, ${targetX} ${targetY}" fill="none" stroke="${stroke}" stroke-width="1.8" ${edge.relationshipType === "expression_reference" ? 'stroke-dasharray="7 5"' : ""} />
-        <text x="${labelX}" y="${labelY}" fill="${SVG_EXPORT_COLORS.mutedForeground}" font-family="IBM Plex Sans, sans-serif" font-size="11" font-weight="600" text-anchor="middle">${escapeSvgText(formatRelationshipType(edge.relationshipType))}</text>
+        <text x="${labelX}" y="${labelY}" fill="var(--muted-foreground)" font-family="IBM Plex Sans, sans-serif" font-size="11" font-weight="600" text-anchor="middle">${escapeSvgText(formatRelationshipType(edge.relationshipType))}</text>
       `;
     })
     .join("");
@@ -643,17 +643,21 @@ export function PlanGraphView({
   ]);
 
   useEffect(() => {
-    const nextSelectedNodeId =
-      selectedAddress && resourceNodeMap.has(selectedAddress)
-        ? selectedAddress
-        : blastRadiusFocusAddress && resourceNodeMap.has(blastRadiusFocusAddress)
-          ? blastRadiusFocusAddress
-          : null;
+    let nextSelectedNodeId: string | null = null;
 
-    if (nextSelectedNodeId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSelectedNodeId(nextSelectedNodeId);
+    if (selectedAddress && resourceNodeMap.has(selectedAddress)) {
+      nextSelectedNodeId = selectedAddress;
+    } else if (selectedAddress === null) {
+      if (
+        blastRadiusFocusAddress &&
+        resourceNodeMap.has(blastRadiusFocusAddress)
+      ) {
+        nextSelectedNodeId = blastRadiusFocusAddress;
+      }
     }
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelectedNodeId(nextSelectedNodeId);
   }, [blastRadiusFocusAddress, resourceNodeMap, selectedAddress]);
 
   const effectiveSelectedNodeId =
