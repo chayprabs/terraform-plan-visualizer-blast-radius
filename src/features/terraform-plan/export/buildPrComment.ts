@@ -29,7 +29,7 @@ export function buildPrComment(exportData: TerraformPlanExportData): string {
           .slice(0, 6)
           .map(
             (resource) =>
-              `- ${resource.action} \`${resource.address}\` (${resource.type}, ${resource.provider})`,
+              `- ${getRiskActionLabel(resource.action)} \`${resource.address}\` (${resource.type}, ${resource.provider})`,
           )
           .join("\n")
       : "- No destructive changes.";
