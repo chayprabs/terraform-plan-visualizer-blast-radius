@@ -429,7 +429,7 @@ export function buildHtmlReport(exportData: TerraformPlanExportData): string {
       <section>
         <h2>Reviewer Checklist</h2>
         <ul>${exportData.reviewerChecklist
-          .map((item) => `<li>${escapeHtml(item)}</li>`)
+          .map((item) => `<li><input type="checkbox" disabled /> ${escapeHtml(item)}</li>`)
           .join("")}</ul>
       </section>
 

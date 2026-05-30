@@ -2,7 +2,11 @@ import {
   formatCurrencyAmount,
   formatMonthlyDelta,
 } from "@/features/terraform-plan/cost/costUtils";
-import { getRiskCategoryLabel, getRiskSeverityLabel } from "@/features/terraform-plan/risk/riskCopy";
+import {
+  getRiskActionLabel,
+  getRiskCategoryLabel,
+  getRiskSeverityLabel,
+} from "@/features/terraform-plan/risk/riskCopy";
 import type { TerraformPlanExportData } from "@/features/terraform-plan/export/exportTypes";
 
 function formatSeverity(severity: string | null): string {

@@ -388,23 +388,23 @@ function getSvgNodeTone(node: GraphNode) {
   return {
     border:
       node.riskLevel === "critical"
-        ? "var(--critical)"
+        ? SVG_EXPORT_COLORS.critical
         : node.riskLevel === "high" || node.riskLevel === "medium"
-          ? "var(--warning)"
+          ? SVG_EXPORT_COLORS.warning
           : node.riskLevel === "low"
-            ? "var(--positive)"
-            : "var(--border)",
-    fill: "var(--surface)",
+            ? SVG_EXPORT_COLORS.positive
+            : SVG_EXPORT_COLORS.border,
+    fill: SVG_EXPORT_COLORS.surface,
     stripe:
       node.riskLevel === "critical"
-        ? "var(--critical)"
+        ? SVG_EXPORT_COLORS.critical
         : node.riskLevel === "high" || node.riskLevel === "medium"
-          ? "var(--warning)"
+          ? SVG_EXPORT_COLORS.warning
           : node.riskLevel === "low"
-            ? "var(--positive)"
+            ? SVG_EXPORT_COLORS.positive
             : node.riskLevel === "info"
-              ? "var(--brand)"
-              : "var(--border)",
+              ? SVG_EXPORT_COLORS.brand
+              : SVG_EXPORT_COLORS.border,
   };
 }
 
@@ -412,18 +412,18 @@ function getSvgActionColor(action: ChangeActionKind): string {
   switch (action) {
     case "create":
     case "import":
-      return "var(--positive)";
+      return SVG_EXPORT_COLORS.positive;
     case "update":
     case "forget":
-      return "var(--warning)";
+      return SVG_EXPORT_COLORS.warning;
     case "delete":
     case "replace":
-      return "var(--critical)";
+      return SVG_EXPORT_COLORS.critical;
     case "read":
     case "no-op":
     case "unknown":
     default:
-      return "var(--border)";
+      return SVG_EXPORT_COLORS.border;
   }
 }
 
