@@ -301,7 +301,7 @@ export function buildHtmlReport(exportData: TerraformPlanExportData): string {
         <div class="card">
           <p>${escapeHtml(exportData.privacy.note)}</p>
           <ul>${exportData.privacy.appliedRedactions
-            .map((item) => `<li>${escapeHtml(item)}</li>`)
+            .map((item) => `<li><input type="checkbox" disabled /> ${escapeHtml(item)}</li>`)
             .join("")}</ul>
         </div>
       </section>
@@ -335,12 +335,12 @@ export function buildHtmlReport(exportData: TerraformPlanExportData): string {
         </div>
       </section>
 
+      ${costImpactMarkup}
+
       <section>
         <h2>Top Findings</h2>
         <ol>${topFindingsMarkup}</ol>
       </section>
-
-      ${costImpactMarkup}
 
       <section>
         <h2>Destructive Changes</h2>
