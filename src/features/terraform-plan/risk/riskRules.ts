@@ -153,6 +153,10 @@ function isIamResource(change: NormalizedResourceChange): boolean {
   return change.typeGroup === "iam";
 }
 
+function hasPlanMutableAction(change: NormalizedResourceChange): boolean {
+  return change.action !== "no-op" && change.action !== "read";
+}
+
 function isNetworkBoundaryResource(change: NormalizedResourceChange): boolean {
   if (change.typeGroup !== "network") {
     return false;
@@ -162,6 +166,7 @@ function isNetworkBoundaryResource(change: NormalizedResourceChange): boolean {
 
   return (
     normalizedType.includes("security_group") ||
+    normalizedType.includes("network_security") ||
     normalizedType.includes("firewall") ||
     normalizedType.includes("network_acl")
   );
@@ -362,7 +367,7 @@ export const RESOURCE_RISK_RULES: ResourceRiskRule[] = [
   {
     id: "iam-change",
     evaluate: (change) =>
-      isIamResource(change)
+      isIamResource(change) && hasPlanMutableAction(change)
         ? [
             createResourceFinding("iam-change", change, {
               severity:
@@ -384,7 +389,7 @@ export const RESOURCE_RISK_RULES: ResourceRiskRule[] = [
   {
     id: "network-open-ingress",
     evaluate: (change) => {
-      if (!isNetworkBoundaryResource(change)) {
+      if (!isNetworkBoundaryResource(change) || !hasPlanMutableAction(change)) {
         return [];
       }
 
@@ -438,7 +443,7 @@ export const RESOURCE_RISK_RULES: ResourceRiskRule[] = [
   {
     id: "storage-public-access",
     evaluate: (change) =>
-      isStorageAccessResource(change)
+      isStorageAccessResource(change) && hasPlanMutableAction(change)
         ? [
             createResourceFinding("storage-public-access", change, {
               severity: "high",
@@ -457,7 +462,7 @@ export const RESOURCE_RISK_RULES: ResourceRiskRule[] = [
   {
     id: "kms-key-change",
     evaluate: (change) =>
-      isKmsResource(change)
+      isKmsResource(change) && hasPlanMutableAction(change)
         ? [
             createResourceFinding("kms-key-change", change, {
               severity: "high",
@@ -496,7 +501,7 @@ export const RESOURCE_RISK_RULES: ResourceRiskRule[] = [
   {
     id: "load-balancer-change",
     evaluate: (change) =>
-      isLoadBalancerResource(change)
+      isLoadBalancerResource(change) && hasPlanMutableAction(change)
         ? [
             createResourceFinding("load-balancer-change", change, {
               severity:

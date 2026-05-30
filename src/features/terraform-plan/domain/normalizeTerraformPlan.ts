@@ -68,7 +68,7 @@ function normalizeResourceChange(
     moduleAddress: change.module_address ?? null,
     modulePath,
     mode: change.mode ?? "managed",
-    type: change.type,
+    type: change.type ?? "unknown",
     typeGroup: getResourceTypeGroup(change.type),
     name: change.name,
     index: change.index ?? null,

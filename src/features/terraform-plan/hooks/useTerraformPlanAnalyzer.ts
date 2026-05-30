@@ -18,7 +18,7 @@ import {
   getTextSizeBytes,
   type TerraformPlanWorkerOutputMessage,
 } from "@/features/terraform-plan/worker/workerMessages";
-import { createAnalysisWorker } from "@/lib/authos/worker/createAnalysisWorker";
+import { createAnalysisWorker } from "@/lib/shared/worker/createAnalysisWorker";
 
 const samplePlanMap = {
   riskyPlan,
@@ -55,7 +55,8 @@ export function useTerraformPlanAnalyzer() {
   useEffect(() => terminateWorker, [terminateWorker]);
 
   const runFallbackAnalysis = useCallback(
-    async (text: string, sourceName?: string) => {
+    async (text: string, sourceName?: string, generationId?: number) => {
+      const generation = generationId ?? analysisGenerationRef.current;
       const fallbackWarning = createWorkerUnavailableWarning();
 
       dispatch({
@@ -66,10 +67,18 @@ export function useTerraformPlanAnalyzer() {
 
       await Promise.resolve();
 
+      if (generation !== analysisGenerationRef.current) {
+        return;
+      }
+
       const result = analyzeTerraformPlanText(text, {
         sourceName,
         extraWarnings: [fallbackWarning],
       });
+
+      if (generation !== analysisGenerationRef.current) {
+        return;
+      }
 
       if (result.ok) {
         dispatch({
@@ -91,6 +100,9 @@ export function useTerraformPlanAnalyzer() {
 
   const analyzeText = useCallback(
     (text: string, sourceName?: string) => {
+      analysisGenerationRef.current += 1;
+      const generation = analysisGenerationRef.current;
+
       dispatch({
         type: "REQUEST_ANALYSIS",
         inputText: text,
@@ -112,7 +124,7 @@ export function useTerraformPlanAnalyzer() {
       }
 
       if (typeof Worker === "undefined") {
-        void runFallbackAnalysis(text, sourceName);
+        void runFallbackAnalysis(text, sourceName, generation);
         return;
       }
 
@@ -123,7 +135,7 @@ export function useTerraformPlanAnalyzer() {
       try {
         worker = createTerraformPlanWorker();
       } catch {
-        void runFallbackAnalysis(text, sourceName);
+        void runFallbackAnalysis(text, sourceName, generation);
         return;
       }
 
@@ -132,6 +144,10 @@ export function useTerraformPlanAnalyzer() {
       worker.onmessage = (
         event: MessageEvent<TerraformPlanWorkerOutputMessage>,
       ) => {
+        if (generation !== analysisGenerationRef.current) {
+          return;
+        }
+
         const message = event.data;
 
         switch (message.type) {
@@ -174,7 +190,7 @@ export function useTerraformPlanAnalyzer() {
 
       worker.onerror = () => {
         terminateWorker();
-        void runFallbackAnalysis(text, sourceName);
+        void runFallbackAnalysis(text, sourceName, generation);
       };
 
       worker.postMessage({

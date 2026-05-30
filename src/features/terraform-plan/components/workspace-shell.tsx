@@ -53,6 +53,7 @@ import {
   applyThemePreference,
   getLocalHistoryRestorableSession,
   loadLocalPreferences,
+  mergeRedactionSettings,
   saveLocalPreferences,
   type ThemePreference,
 } from "@/features/terraform-plan/state/localPreferences";
@@ -326,10 +327,7 @@ export function WorkspaceShell() {
       applyThemePreference(savedPreferences.theme);
       setPrivacySettings(
         parsedUrlState.hasRedactionSettings
-          ? mergeRedactionSettings(
-              savedPreferences.redactionSettings,
-              parsedUrlState.state.redactionSettings,
-            )
+          ? parsedUrlState.state.redactionSettings
           : savedPreferences.redactionSettings,
       );
       setBlastRadiusFocusAddress(
