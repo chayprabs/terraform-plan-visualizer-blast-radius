@@ -2,7 +2,11 @@ import {
   formatCurrencyAmount,
   formatMonthlyDelta,
 } from "@/features/terraform-plan/cost/costUtils";
-import { getRiskCategoryLabel, getRiskSeverityLabel } from "@/features/terraform-plan/risk/riskCopy";
+import {
+  getRiskActionLabel,
+  getRiskCategoryLabel,
+  getRiskSeverityLabel,
+} from "@/features/terraform-plan/risk/riskCopy";
 import type { TerraformPlanExportData } from "@/features/terraform-plan/export/exportTypes";
 
 function formatSeverity(severity: string | null): string {
@@ -25,7 +29,7 @@ export function buildPrComment(exportData: TerraformPlanExportData): string {
           .slice(0, 6)
           .map(
             (resource) =>
-              `- ${getRiskActionLabel(resource.action)} \`${resource.address}\` (${resource.type}, ${resource.provider})`,
+              `- ${resource.action} \`${resource.address}\` (${resource.type}, ${resource.provider})`,
           )
           .join("\n")
       : "- No destructive changes.";
