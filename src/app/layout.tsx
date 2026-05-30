@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import { AppShell } from "@/components/layout/app-shell";
-import { getSiteUrl, siteConfig } from "@/lib/site";
+import { siteConfig } from "@/lib/site";
 import "./globals.css";
 
 const sans = IBM_Plex_Sans({
@@ -17,7 +17,6 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(getSiteUrl()),
   applicationName: siteConfig.name,
   title: {
     default: siteConfig.name,
@@ -35,7 +34,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${sans.variable} ${mono.variable}`}>
+    <html
+      lang="en"
+      data-theme="light"
+      className={`${sans.variable} ${mono.variable}`}
+    >
       <body className="bg-background text-foreground min-h-screen font-sans antialiased">
         <AppShell>{children}</AppShell>
       </body>

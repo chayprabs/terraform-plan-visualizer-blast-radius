@@ -8,7 +8,7 @@ for (const tool of availableProductTools) {
 
     await expect(page.getByRole("heading", { level: 1 })).toBeAttached();
     await expect(
-      page.getByRole("navigation", { name: /External links/i }),
+      page.getByRole("banner").getByRole("navigation", { name: /External links/i }),
     ).toBeVisible();
     await expect(page.locator('section[aria-label="Privacy notice"]')).toBeVisible();
 
